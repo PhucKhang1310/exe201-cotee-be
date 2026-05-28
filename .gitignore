@@ -1,0 +1,97 @@
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio cache/options
+.vs/
+.vscode/
+
+# Visual Studio Code
+*.code-workspace
+
+# Rider
+.idea/
+*.sln.iml
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Local environment variables
+.env
+.env.local
+.env.*.local
+
+# MongoDB
+mongodb/
+mongodump/
+
+# npm/node (if using Node tools)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Application Insights
+ApplicationInsights.config
+bin/Release/net*/
+PublishProfiles/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Test Coverage
+coverage/
+*.coverage
+*.opencover.xml
+
+# Certificates
+*.pfx
+*.pem
+*.crt
+
+# Secret files
+appsettings.Secret.json
+secrets.json
+.secrets
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# NuGet
+.nuget/
+nuget.exe
+
+# Build folder
+/build/
+
+# Publish folder
+/publish/
+
+# Misc
+.classpath
+.project
+.settings/
+*.launch
