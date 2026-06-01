@@ -1,0 +1,33 @@
+name: Build and Publish Image
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io --username "${{ github.actor }}" --password-stdin
+
+      - name: Set image name
+        run: echo "IMAGE_NAME=ghcr.io/${GITHUB_REPOSITORY,,}/cootee-api" >> "$GITHUB_ENV"
+
+      - name: Build image
+        run: docker build --tag "${IMAGE_NAME}:latest" --tag "${IMAGE_NAME}:${{ github.sha }}" .
+
+      - name: Push latest image
+        run: docker push "${IMAGE_NAME}:latest"
+
+      - name: Push commit image
+        run: docker push "${IMAGE_NAME}:${{ github.sha }}"

@@ -5,6 +5,7 @@ using CooTee.Services;
 using MongoDB.Driver;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using CooTee.Middleware;
@@ -190,10 +191,26 @@ builder.Services.AddCors(options =>
 });
 
 
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 
 
 var app = builder.Build();
 
+
+app.MapGet("/health", () => Results.Ok(new
+{
+    Status = "Healthy",
+    Timestamp = DateTimeOffset.UtcNow
+}));
+
+
+app.UseForwardedHeaders();
 
 
 
