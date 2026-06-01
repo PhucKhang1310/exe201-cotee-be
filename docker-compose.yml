@@ -1,6 +1,26 @@
-version: '3.8'
-
 services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cootee-api
+    ports:
+      - "5001:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      PORT: 8080
+      MongoDbSettings__ConnectionString: mongodb://admin:admin123@mongodb:27017/?authSource=admin
+      MongoDbSettings__DatabaseName: CooTeeDb
+      AppSettings__BaseUrl: http://localhost:5001
+      MomoSettings__ReturnUrl: http://localhost:5001/api/orders/momo-return
+      MomoSettings__IpnUrl: http://localhost:5001/api/orders/momo-ipn
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - cootee-network
+    restart: unless-stopped
+
   mongodb:
     image: mongo:latest
     container_name: cootee-mongodb
@@ -17,7 +37,7 @@ services:
       - cootee-network
     restart: unless-stopped
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      test: mongosh --quiet --eval "db.adminCommand('ping').ok"
       interval: 10s
       timeout: 5s
       retries: 5

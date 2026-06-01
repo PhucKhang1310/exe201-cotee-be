@@ -5,6 +5,7 @@ using CooTee.Services;
 using MongoDB.Driver;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using CooTee.Middleware;
@@ -28,6 +29,8 @@ builder.Configuration.GetSection("AppSettings").Bind(appSettings);
 
 var momoSettings = new MomoSettings();
 builder.Configuration.GetSection("MomoSettings").Bind(momoSettings);
+
+var swaggerEnabled = builder.Configuration.GetValue<bool>("Swagger:Enabled");
 
 
 try
@@ -190,17 +193,37 @@ builder.Services.AddCors(options =>
 });
 
 
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 
 
 var app = builder.Build();
 
 
+app.MapGet("/health", () => Results.Ok(new
+{
+    Status = "Healthy",
+    Timestamp = DateTimeOffset.UtcNow
+}));
 
 
-if (app.Environment.IsDevelopment())
+app.UseForwardedHeaders();
+
+
+
+if (app.Environment.IsDevelopment() || swaggerEnabled)
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "CooTee API v1");
+        options.RoutePrefix = "swagger";
+    });
 }
 
 app.UseHttpsRedirection();
