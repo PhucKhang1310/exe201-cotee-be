@@ -30,6 +30,8 @@ builder.Configuration.GetSection("AppSettings").Bind(appSettings);
 var momoSettings = new MomoSettings();
 builder.Configuration.GetSection("MomoSettings").Bind(momoSettings);
 
+var swaggerEnabled = builder.Configuration.GetValue<bool>("Swagger:Enabled");
+
 
 try
 {
@@ -214,10 +216,14 @@ app.UseForwardedHeaders();
 
 
 
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || swaggerEnabled)
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "CooTee API v1");
+        options.RoutePrefix = "swagger";
+    });
 }
 
 app.UseHttpsRedirection();

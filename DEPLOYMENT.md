@@ -30,7 +30,7 @@ Railway does not run `docker-compose.yml` directly in production. Use Compose lo
 ASPNETCORE_ENVIRONMENT=Production
 MongoDbSettings__ConnectionString=<mongodb-connection-string>
 MongoDbSettings__DatabaseName=CooTeeDb
-Jwt__SecretKey=<at-least-32-characters>
+Jwt__SecretKey=<at-least-32-characters-no-quotes>
 Jwt__Issuer=CooTeeApi
 Jwt__Audience=CooTeeClient
 Jwt__ExpirationMinutes=60
@@ -42,6 +42,7 @@ SmtpSettings__FromEmail=<sender-email>
 SmtpSettings__FromName=CooTee Account
 SmtpSettings__EnableSSL=true
 AppSettings__BaseUrl=https://your-service.up.railway.app
+Swagger__Enabled=true
 MomoSettings__PartnerCode=<momo-partner-code>
 MomoSettings__AccessKey=<momo-access-key>
 MomoSettings__SecretKey=<momo-secret-key>
@@ -51,6 +52,51 @@ MomoSettings__IpnUrl=https://your-service.up.railway.app/api/orders/momo-ipn
 ```
 
 Do not set `ASPNETCORE_URLS` on Railway. Railway injects `PORT`, and the Dockerfile maps that to `ASPNETCORE_URLS` at container startup.
+
+Swagger is available at:
+
+```text
+https://your-service.up.railway.app/swagger
+```
+
+Swagger is enabled by default in production for this project. You can set `Swagger__Enabled=false` in Railway later if you do not want public API docs.
+
+## Common Railway Startup Error
+
+If Railway logs show this:
+
+```text
+JwtSettings.SecretKey must be at least 32 characters
+```
+
+Fix the service variable named exactly:
+
+```text
+Jwt__SecretKey
+```
+
+Do not use `JWT_SECRET_KEY`, `Jwt:SecretKey`, or `${JWT_SECRET_KEY}` on Railway. ASP.NET Core maps nested config using double underscores.
+
+Use a long random value, for example:
+
+```text
+Jwt__SecretKey=change-this-to-a-random-secret-with-64-plus-characters
+```
+
+After changing the variable, redeploy the Railway service.
+
+## MongoDB Atlas
+
+For MongoDB Atlas, set the connection string in Railway as:
+
+```text
+MongoDbSettings__ConnectionString=mongodb+srv://<username>:<password>@<cluster-host>/
+MongoDbSettings__DatabaseName=CooTeeDb
+```
+
+Keep the database name in `MongoDbSettings__DatabaseName`. The app will create collections when it first writes data.
+
+Do not commit the real Atlas username or password to this repository.
 
 ## Local Docker Run
 
