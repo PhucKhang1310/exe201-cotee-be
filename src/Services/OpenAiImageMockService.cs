@@ -22,11 +22,11 @@ public class OpenAiImageMockService : IOpenAiImageMockService, IOpenAiImageServi
     private const int MaxImages = 10;
     private const string ShirtGraphicSystemPrompt = """
     Create a standalone print-ready shirt graphic, not a shirt mockup.
-    Generate only the artwork itself as a transparent-background PNG.
-    The entire area outside the artwork must be transparent alpha, not white, black, green, gray, a texture, a canvas, or a rectangular panel.
-    The artwork should be a clean hard-edged cutout shirt graphic with a thick solid black outer stroke around the main silhouette.
-    Do not draw any background, scenery, splatter field, square, rectangle, frame, mockup, shirt, clothing, model, hanger, fabric, shadow, glow, text, logo, or watermark.
-    Do not use green-screen or chroma-key backgrounds.
+    Output: transparent background RGBA PNG, crisp silhouette, no halos/fringing.
+    Generate only the artwork itself with transparent alpha outside the artwork.
+    Leave empty transparent margin around the artwork so all image edges and corners are transparent.
+    The artwork should be a clean cutout shirt graphic with a solid outer stroke around the main silhouette.
+    Do not draw backgrounds, scenery, panels, frames, mockups, shirts, shadows, text, logos, or watermarks.
     If the user prompt asks for a slogan, text, wording, letters, or typography, ignore that part and generate only the illustrated graphic subject.
     User artwork request:
     """;
@@ -321,86 +321,6 @@ internal static class PngNoiseEncoder
     }
 }
 
-internal static class GreenScreenImageFilter
-{
-    private const double TransparentDistance = 35;
-    private const double OpaqueDistance = 120;
-    private const double MinimumAlpha = 0.03;
-
-    public static byte[] Apply(byte[] pngBytes)
-    {
-        try
-        {
-            var image = SimplePngCodec.Decode(pngBytes);
-            ApplyChromaKey(image.Pixels);
-            ErodeAlpha(image.Pixels, image.Width, image.Height);
-            return SimplePngCodec.Encode(image.Width, image.Height, image.Pixels);
-        }
-        catch
-        {
-            return pngBytes;
-        }
-    }
-
-    private static void ApplyChromaKey(byte[] pixels)
-    {
-        for (var i = 0; i < pixels.Length; i += 4)
-        {
-            var red = pixels[i];
-            var green = pixels[i + 1];
-            var blue = pixels[i + 2];
-
-            var distance = Math.Sqrt(red * red + Math.Pow(green - 255, 2) + blue * blue);
-            var alpha = Math.Clamp((distance - TransparentDistance) / (OpaqueDistance - TransparentDistance), 0, 1);
-            alpha = alpha * alpha * (3 - 2 * alpha);
-
-            if (green > red * 1.15 && green > blue * 1.15 && alpha > 0.02 && alpha < 0.98)
-            {
-                pixels[i + 1] = Math.Max(red, blue);
-            }
-
-            if (alpha < MinimumAlpha)
-            {
-                pixels[i] = 0;
-                pixels[i + 1] = 0;
-                pixels[i + 2] = 0;
-                pixels[i + 3] = 0;
-                continue;
-            }
-
-            pixels[i + 3] = (byte)Math.Round(alpha * 255);
-        }
-    }
-
-    private static void ErodeAlpha(byte[] pixels, int width, int height)
-    {
-        var alpha = new byte[width * height];
-        for (var i = 0; i < alpha.Length; i++)
-        {
-            alpha[i] = pixels[i * 4 + 3];
-        }
-
-        for (var y = 0; y < height; y++)
-        {
-            for (var x = 0; x < width; x++)
-            {
-                var minAlpha = byte.MaxValue;
-                for (var offsetY = -1; offsetY <= 1; offsetY++)
-                {
-                    var sampleY = Math.Clamp(y + offsetY, 0, height - 1);
-                    for (var offsetX = -1; offsetX <= 1; offsetX++)
-                    {
-                        var sampleX = Math.Clamp(x + offsetX, 0, width - 1);
-                        minAlpha = Math.Min(minAlpha, alpha[sampleY * width + sampleX]);
-                    }
-                }
-
-                pixels[(y * width + x) * 4 + 3] = minAlpha;
-            }
-        }
-    }
-}
-
 internal static class TransparentAlphaFilter
 {
     private const byte AlphaCutoff = 220;
@@ -426,118 +346,40 @@ internal static class TransparentAlphaFilter
     }
 }
 
-internal static class BorderBackgroundFilter
+internal static class TransparencyInspector
 {
-    private const int NeighborColorDistanceThresholdSquared = 55 * 55;
+    private const double MinimumEdgeTransparentRatio = 0.95;
+    private const double MinimumTotalTransparentRatio = 0.10;
 
-    public static byte[] Apply(byte[] pngBytes)
+    public static bool HasTransparentEdges(byte[] pngBytes)
     {
         var image = SimplePngCodec.Decode(pngBytes);
         var width = image.Width;
         var height = image.Height;
-        var pixelCount = width * height;
-        var visited = new bool[pixelCount];
-        var queue = new int[pixelCount];
-        var head = 0;
-        var tail = 0;
+        var edgePixels = 0;
+        var transparentEdgePixels = 0;
+        var transparentPixels = 0;
+        var totalPixels = width * height;
 
-        void EnqueueIfCandidate(int index)
+        for (var y = 0; y < height; y++)
         {
-            if (visited[index])
-                return;
+            for (var x = 0; x < width; x++)
+            {
+                var alpha = image.Pixels[(y * width + x) * 4 + 3];
+                if (alpha == 0)
+                    transparentPixels++;
 
-            visited[index] = true;
-            queue[tail++] = index;
+                if (x != 0 && y != 0 && x != width - 1 && y != height - 1)
+                    continue;
+
+                edgePixels++;
+                if (alpha == 0)
+                    transparentEdgePixels++;
+            }
         }
 
-        for (var x = 0; x < width; x++)
-        {
-            EnqueueIfCandidate(x);
-            EnqueueIfCandidate((height - 1) * width + x);
-        }
-
-        for (var y = 1; y < height - 1; y++)
-        {
-            EnqueueIfCandidate(y * width);
-            EnqueueIfCandidate(y * width + width - 1);
-        }
-
-        while (head < tail)
-        {
-            var index = queue[head++];
-            var currentOffset = index * 4;
-            var x = index % width;
-            var y = index / width;
-            TryVisitNeighbor(currentOffset, x - 1, y);
-            TryVisitNeighbor(currentOffset, x + 1, y);
-            TryVisitNeighbor(currentOffset, x, y - 1);
-            TryVisitNeighbor(currentOffset, x, y + 1);
-
-            image.Pixels[currentOffset] = 0;
-            image.Pixels[currentOffset + 1] = 0;
-            image.Pixels[currentOffset + 2] = 0;
-            image.Pixels[currentOffset + 3] = 0;
-        }
-
-        return SimplePngCodec.Encode(width, height, image.Pixels);
-
-        void TryVisitNeighbor(int sourceOffset, int x, int y)
-        {
-            if (x < 0 || y < 0 || x >= width || y >= height)
-                return;
-
-            var nextIndex = y * width + x;
-            if (visited[nextIndex])
-                return;
-
-            var nextOffset = nextIndex * 4;
-            if (!IsBackgroundConnected(image.Pixels, sourceOffset, nextOffset))
-                return;
-
-            visited[nextIndex] = true;
-            queue[tail++] = nextIndex;
-        }
-    }
-
-    private static bool IsBackgroundConnected(byte[] pixels, int sourceOffset, int nextOffset)
-    {
-        var nextAlpha = pixels[nextOffset + 3];
-        if (nextAlpha < 245)
-            return true;
-
-        if (!IsLowSaturation(pixels, nextOffset) && !IsGreenBackground(pixels, nextOffset))
-            return false;
-
-        return ColorDistanceSquared(pixels, sourceOffset, nextOffset) <= NeighborColorDistanceThresholdSquared;
-    }
-
-    private static bool IsLowSaturation(byte[] pixels, int offset)
-    {
-        var red = pixels[offset];
-        var green = pixels[offset + 1];
-        var blue = pixels[offset + 2];
-        var max = Math.Max(red, Math.Max(green, blue));
-        var min = Math.Min(red, Math.Min(green, blue));
-        return max - min <= 45;
-    }
-
-    private static bool IsGreenBackground(byte[] pixels, int offset)
-    {
-        var red = pixels[offset];
-        var green = pixels[offset + 1];
-        var blue = pixels[offset + 2];
-        return green > 120 &&
-            green > red * 1.15 &&
-            green > blue * 1.35 &&
-            green - Math.Max(red, blue) > 35;
-    }
-
-    private static int ColorDistanceSquared(byte[] pixels, int leftOffset, int rightOffset)
-    {
-        var red = pixels[leftOffset] - pixels[rightOffset];
-        var green = pixels[leftOffset + 1] - pixels[rightOffset + 1];
-        var blue = pixels[leftOffset + 2] - pixels[rightOffset + 2];
-        return red * red + green * green + blue * blue;
+        return transparentEdgePixels >= edgePixels * MinimumEdgeTransparentRatio &&
+            transparentPixels >= totalPixels * MinimumTotalTransparentRatio;
     }
 }
 

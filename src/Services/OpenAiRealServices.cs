@@ -54,11 +54,11 @@ public class OpenAiImageRealService : IOpenAiImageService
     private const int TransparentImageAttempts = 3;
     private const string ShirtGraphicSystemPrompt = """
     Create a standalone print-ready shirt graphic, not a shirt mockup.
-    Generate only the artwork itself on a transparent PNG canvas.
-    Pixels outside the artwork and its outer stroke must have alpha 0.
-    Leave empty transparent margin around the artwork so the image edges are transparent.
-    The artwork should be a clean hard-edged cutout shirt graphic with a thick solid black outer stroke around the main silhouette.
-    Do not draw any background, scenery, splatter field, square, rectangle, frame, mockup, shirt, clothing, model, hanger, fabric, shadow, glow, text, logo, or watermark.
+    Output: transparent background RGBA PNG, crisp silhouette, no halos/fringing.
+    Generate only the artwork itself with transparent alpha outside the artwork.
+    Leave empty transparent margin around the artwork so all image edges and corners are transparent.
+    The artwork should be a clean cutout shirt graphic with a solid outer stroke around the main silhouette.
+    Do not draw backgrounds, scenery, panels, frames, mockups, shirts, shadows, text, logos, or watermarks.
     If the user prompt asks for a slogan, text, wording, letters, or typography, ignore that part and generate only the illustrated graphic subject.
     User artwork request:
     """;
@@ -66,9 +66,9 @@ public class OpenAiImageRealService : IOpenAiImageService
     private const string TransparentRetryPrompt = """
 
     IMPORTANT CORRECTION: The previous result was rejected because it included an opaque rectangular background.
-    Return a PNG where the entire outside of the artwork is real alpha transparency.
-    Do not simulate transparency with any colored, gray, black, white, green, checkerboard, or gradient background.
-    The final image must have transparent pixels on all four edges and in all four corners.
+    Return an RGBA PNG with real transparent alpha outside the artwork.
+    Keep the silhouette crisp with no halos/fringing.
+    All four image edges and all four corners must be transparent.
     """;
 
     private readonly HttpClient _httpClient;
