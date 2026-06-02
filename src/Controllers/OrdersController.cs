@@ -19,7 +19,7 @@ public class OrdersController : ControllerBase
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    [Authorize(Roles = "Customer")]
+    [Authorize]
     [HttpPost("checkout")]
     public async Task<ActionResult<CheckoutResponse>> Checkout([FromBody] CheckoutRequest request)
     {
@@ -47,6 +47,11 @@ public class OrdersController : ControllerBase
             _logger.LogWarning(ex, "Checkout failed due to invalid business state");
             return BadRequest(new { message = ex.Message });
         }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "Checkout failed because payment gateway request failed");
+            return StatusCode(StatusCodes.Status502BadGateway, new { message = ex.Message });
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating checkout order");
@@ -54,7 +59,7 @@ public class OrdersController : ControllerBase
         }
     }
 
-    [Authorize(Roles = "Customer")]
+    [Authorize]
     [HttpGet("history")]
     [HttpGet("my-orders")]
     public async Task<ActionResult<IEnumerable<Order>>> GetMyOrders()
@@ -94,7 +99,7 @@ public class OrdersController : ControllerBase
         }
     }
 
-    [Authorize(Roles = "Customer")]
+    [Authorize]
     [HttpGet("{orderCode}")]
     public async Task<ActionResult<Order>> GetOrderByCode(string orderCode)
     {
@@ -104,7 +109,7 @@ public class OrdersController : ControllerBase
             if (string.IsNullOrWhiteSpace(userId))
                 return Unauthorized(new { message = "Unauthorized" });
 
-            var order = await _orderService.GetUserOrderByCodeAsync(userId, orderCode);
+            var order = await _orderService.GetOrderByCodeAsync(userId, orderCode, IsAdmin());
             if (order == null)
                 return NotFound(new { message = "Không tìm thấy đơn hàng" });
 
@@ -117,7 +122,7 @@ public class OrdersController : ControllerBase
         }
     }
 
-    [Authorize(Roles = "Customer")]
+    [Authorize]
     [HttpPost("{orderCode}/cancel")]
     public async Task<ActionResult<Order>> CancelOrder(string orderCode)
     {
@@ -176,6 +181,28 @@ public class OrdersController : ControllerBase
     }
 
     [AllowAnonymous]
+    [HttpGet("momo-return")]
+    public ActionResult<MomoReturnResponse> MomoReturn([FromQuery] MomoReturnQuery query)
+    {
+        if (query == null)
+            return BadRequest(new { message = "Missing MoMo return parameters" });
+
+        _logger.LogInformation("MoMo return received for order {OrderId} with resultCode {ResultCode}", query.OrderId, query.ResultCode);
+
+        var resultMessage = query.ResultCode == 0
+            ? "Thanh toán MoMo đã hoàn tất. Vui lòng chờ xác nhận từ cổng thanh toán." 
+            : "Thanh toán MoMo không thành công. Vui lòng kiểm tra lại thông tin hoặc thử lại.";
+
+        return Ok(new MomoReturnResponse
+        {
+            OrderId = query.OrderId,
+            ResultCode = query.ResultCode,
+            Message = resultMessage,
+            ExtraData = query.ExtraData
+        });
+    }
+
+    [AllowAnonymous]
     [HttpPost("momo-ipn")]
     public async Task<ActionResult<MomoIpnResult>> MomoIpn([FromBody] MomoIpnRequest request)
     {
@@ -201,7 +228,8 @@ public class OrdersController : ControllerBase
 
     private bool IsAdmin()
     {
-        return string.Equals(User.FindFirst("role")?.Value, "Admin", StringComparison.OrdinalIgnoreCase);
+        return string.Equals(User.FindFirst(ClaimTypes.Role)?.Value, "Admin", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(User.FindFirst("role")?.Value, "Admin", StringComparison.OrdinalIgnoreCase);
     }
 }
 
@@ -216,4 +244,20 @@ public class UpdateOrderStatusRequest
 {
     public string? OrderStatus { get; set; }
     public string? PaymentStatus { get; set; }
+}
+
+public class MomoReturnQuery
+{
+    public string OrderId { get; set; } = string.Empty;
+    public int ResultCode { get; set; }
+    public string Message { get; set; } = string.Empty;
+    public string ExtraData { get; set; } = string.Empty;
+}
+
+public class MomoReturnResponse
+{
+    public string OrderId { get; set; } = string.Empty;
+    public int ResultCode { get; set; }
+    public string Message { get; set; } = string.Empty;
+    public string ExtraData { get; set; } = string.Empty;
 }

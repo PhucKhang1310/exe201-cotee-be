@@ -68,6 +68,82 @@ public class UsersManagementController : ControllerBase
         }
     }
 
+    [HttpGet("email/{email}")]
+    public async Task<ActionResult<UserAdminDto>> GetUserByEmail(string email)
+    {
+        try
+        {
+            var user = await _userService.GetUserByEmailAsync(email);
+            if (user == null)
+                return NotFound(new { message = "Không tìm thấy tài khoản" });
+
+            return Ok(UserAdminDto.FromEntity(user));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving user by email {Email} for admin", email);
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Lỗi khi lấy chi tiết tài khoản" });
+        }
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<UserAdminDto>> CreateUser([FromBody] CreateUserRequest request)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(request.Email) ||
+                string.IsNullOrWhiteSpace(request.Password) ||
+                string.IsNullOrWhiteSpace(request.FullName))
+            {
+                return BadRequest(new { message = "Email, password và fullName là bắt buộc" });
+            }
+
+            var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+            var user = await _userService.CreateUserAsync(request.Email, passwordHash, request.FullName);
+
+            return CreatedAtAction(nameof(GetUserById),
+                new { id = user.Id }, UserAdminDto.FromEntity(user));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating user for admin");
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Lỗi khi tạo tài khoản" });
+        }
+    }
+
+    [HttpPut("{id}")]
+    public async Task<ActionResult<UserAdminDto>> UpdateUser(string id, [FromBody] UpdateUserRequest request)
+    {
+        try
+        {
+            var existingUser = await _userService.GetUserByIdAsync(id);
+            if (existingUser == null)
+                return NotFound(new { message = "Không tìm thấy tài khoản" });
+
+            if (!string.IsNullOrWhiteSpace(request.FullName))
+                existingUser.FullName = request.FullName;
+
+            if (!string.IsNullOrWhiteSpace(request.Role))
+                existingUser.Role = request.Role;
+
+            var success = await _userService.UpdateUserAsync(id, existingUser);
+            if (!success)
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new { message = "Không thể cập nhật tài khoản" });
+
+            return Ok(UserAdminDto.FromEntity(existingUser));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating user {UserId} for admin", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Lỗi khi cập nhật tài khoản" });
+        }
+    }
+
     [HttpPut("{id}/toggle-status")]
     public async Task<ActionResult<UserAdminDto>> ToggleStatus(string id)
     {
@@ -142,4 +218,17 @@ public class PagedUserResponse
     public int PageSize { get; set; }
     public int Total { get; set; }
     public List<UserAdminDto> Items { get; set; } = new();
+}
+
+public class CreateUserRequest
+{
+    public string Email { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+    public string FullName { get; set; } = string.Empty;
+}
+
+public class UpdateUserRequest
+{
+    public string? FullName { get; set; }
+    public string? Role { get; set; }
 }

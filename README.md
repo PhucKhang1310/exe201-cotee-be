@@ -155,6 +155,11 @@ Sửa nội dung trong `appsettings.json` hoặc `appsettings.Development.json`:
 
 > Khuyến nghị: trong môi trường production, hãy chuyển các secret sang biến môi trường hoặc secret manager.
 
+> Lưu ý MoMo:
+> - `ReturnUrl` trỏ tới endpoint API dùng để nhận redirect sau khi khách hàng thanh toán xong.
+> - `IpnUrl` là endpoint để MoMo gửi thông báo thanh toán (IPN) và xác nhận trạng thái đơn hàng.
+> - Khi chạy local, bạn có thể cần tạo tunnel công khai (ví dụ ngrok) để MoMo có thể truy cập `IpnUrl` nếu dùng endpoint trên localhost.
+
 ## Hướng dẫn chạy dự án
 
 ### 1. Restore package
@@ -208,11 +213,15 @@ Sau khi chạy, API sẽ sẵn sàng tại:
 - POST /api/orders/{orderCode}/cancel
 - GET /api/orders/admin (Admin)
 - PATCH /api/orders/{orderCode}/status (Admin)
+- GET /api/orders/momo-return
 - POST /api/orders/momo-ipn
 
 ### Quản trị người dùng
 - GET /api/admin/users
 - GET /api/admin/users/{id}
+- GET /api/admin/users/email/{email}
+- POST /api/admin/users
+- PUT /api/admin/users/{id}
 - PUT /api/admin/users/{id}/toggle-status
 - DELETE /api/admin/users/{id}
 

@@ -35,12 +35,19 @@ public class CartService
                 throw new InvalidOperationException("Số lượng vượt quá tồn kho");
 
             var userObjectId = ObjectId.Parse(userId);
-            var cart = await _cartCollection.Find(Builders<Cart>.Filter.Eq("userId", userObjectId)).FirstOrDefaultAsync()
-                       ?? new Cart
-                       {
-                           UserId = userId,
-                           Items = new List<CartItem>()
-                       };
+            var cart = await _cartCollection.Find(Builders<Cart>.Filter.Eq("userId", userObjectId)).FirstOrDefaultAsync();
+            if (cart == null)
+            {
+                cart = new Cart
+                {
+                    UserId = userId,
+                    Items = new List<CartItem>()
+                };
+            }
+            else if (cart.Items == null)
+            {
+                cart.Items = new List<CartItem>();
+            }
 
             var existingItem = cart.Items.FirstOrDefault(i => i.ProductId == productId && string.Equals(i.Size, size, StringComparison.OrdinalIgnoreCase));
             if (existingItem != null)
@@ -79,6 +86,9 @@ public class CartService
             if (cart == null)
                 throw new InvalidOperationException("Giỏ hàng không tồn tại");
 
+            if (cart.Items == null)
+                cart.Items = new List<CartItem>();
+
             var existingItem = cart.Items.FirstOrDefault(i => i.ProductId == productId && string.Equals(i.Size, size, StringComparison.OrdinalIgnoreCase));
             if (existingItem == null)
                 throw new InvalidOperationException("Sản phẩm không tồn tại trong giỏ hàng");
@@ -113,6 +123,9 @@ public class CartService
             var cart = await _cartCollection.Find(Builders<Cart>.Filter.Eq("userId", userObjectId)).FirstOrDefaultAsync();
             if (cart == null)
                 throw new InvalidOperationException("Giỏ hàng không tồn tại");
+
+            if (cart.Items == null)
+                cart.Items = new List<CartItem>();
 
             var itemsToRemove = cart.Items
                 .Where(i => i.ProductId == productId && (string.IsNullOrWhiteSpace(size) || string.Equals(i.Size, size, StringComparison.OrdinalIgnoreCase)))
@@ -160,7 +173,7 @@ public class CartService
 
             var userObjectId = ObjectId.Parse(userId);
             var cart = await _cartCollection.Find(Builders<Cart>.Filter.Eq("userId", userObjectId)).FirstOrDefaultAsync();
-            if (cart == null || cart.Items.Count == 0)
+            if (cart == null || cart.Items == null || cart.Items.Count == 0)
                 return new List<CartItemDetailsResponse>();
 
             var productObjectIds = cart.Items

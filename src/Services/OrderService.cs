@@ -68,7 +68,7 @@ public class OrderService
 
             var userObjectId = ObjectId.Parse(userId);
             var cart = await _cartCollection.Find(Builders<Cart>.Filter.Eq("userId", userObjectId)).FirstOrDefaultAsync();
-            if (cart == null || cart.Items.Count == 0)
+            if (cart == null || cart.Items == null || cart.Items.Count == 0)
                 throw new InvalidOperationException("Giỏ hàng trống");
 
             var productObjectIds = cart.Items
@@ -116,8 +116,6 @@ public class OrderService
                 CreatedAt = DateTime.UtcNow
             };
 
-            await _orderCollection.InsertOneAsync(order);
-
             var requestId = Guid.NewGuid().ToString("N");
             var extraData = string.Empty;
             var orderInfo = $"Thanh toán đơn hàng {orderCode}";
@@ -152,7 +150,7 @@ public class OrderService
             if (paymentResponse == null || string.IsNullOrWhiteSpace(paymentResponse.PayUrl))
                 throw new InvalidOperationException("MoMo không trả về payUrl hợp lệ");
 
-            await _cartCollection.DeleteManyAsync(Builders<Cart>.Filter.Eq("userId", userObjectId));
+            await _orderCollection.InsertOneAsync(order);
 
             return new CheckoutResponse
             {
@@ -187,12 +185,19 @@ public class OrderService
             .ToListAsync();
     }
 
-    public async Task<Order?> GetUserOrderByCodeAsync(string userId, string orderCode)
+    public async Task<Order?> GetOrderByCodeAsync(string userId, string orderCode, bool isAdmin)
     {
-        ValidateUserId(userId);
         if (string.IsNullOrWhiteSpace(orderCode))
             throw new ArgumentException("orderCode không được để trống", nameof(orderCode));
 
+        if (isAdmin)
+        {
+            return await _orderCollection
+                .Find(Builders<Order>.Filter.Eq("orderCode", orderCode))
+                .FirstOrDefaultAsync();
+        }
+
+        ValidateUserId(userId);
         var userObjectId = ObjectId.Parse(userId);
         return await _orderCollection
             .Find(Builders<Order>.Filter.And(
@@ -331,6 +336,7 @@ public class OrderService
                     {
                         order.PaymentStatus = "Paid";
                         order.OrderStatus = "Processing";
+                        await ClearCartForUserAsync(session, order.UserId);
                     }
                 }
                 else
@@ -398,6 +404,14 @@ public class OrderService
         }
 
         return true;
+    }
+
+    private async Task ClearCartForUserAsync(IClientSessionHandle session, string userId)
+    {
+        if (!ObjectId.TryParse(userId, out var userObjectId))
+            return;
+
+        await _cartCollection.DeleteManyAsync(session, Builders<Cart>.Filter.Eq("userId", userObjectId));
     }
 
     private static string NormalizeStatus(string? status)

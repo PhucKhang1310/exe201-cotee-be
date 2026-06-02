@@ -54,14 +54,15 @@ public class ProductsController : ControllerBase
         }
     }
 
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     [HttpPost]
     public async Task<ActionResult<Product>> CreateProduct([FromBody] CreateProductRequest request)
     {
         try
         {
-            if (!IsAdmin())
-                return Forbid();
+            var userId = GetCurrentUserId();
+            if (string.IsNullOrWhiteSpace(userId))
+                return Unauthorized(new { message = "Unauthorized" });
 
             if (request == null)
                 return BadRequest(new { message = "Request body không được để trống" });
@@ -80,7 +81,8 @@ public class ProductsController : ControllerBase
                 Name = request.Name.Trim(),
                 ImageUrl = request.ImageUrl,
                 Price = request.Price,
-                Stock = request.Stock
+                Stock = request.Stock,
+                OwnerId = userId
             };
 
             var createdProduct = await _productRepository.CreateAsync(product);
@@ -93,21 +95,25 @@ public class ProductsController : ControllerBase
         }
     }
 
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     [HttpPut("{id}")]
     public async Task<ActionResult<Product>> UpdateProduct(string id, [FromBody] UpdateProductRequest request)
     {
         try
         {
-            if (!IsAdmin())
-                return Forbid();
-
             if (request == null)
                 return BadRequest(new { message = "Request body không được để trống" });
 
             var product = await _productRepository.GetByIdAsync(id);
             if (product == null)
                 return NotFound(new { message = "Không tìm thấy sản phẩm" });
+
+            var userId = GetCurrentUserId();
+            if (string.IsNullOrWhiteSpace(userId))
+                return Unauthorized(new { message = "Unauthorized" });
+
+            if (!IsAdmin() && !string.Equals(product.OwnerId, userId, StringComparison.OrdinalIgnoreCase))
+                return Forbid();
 
             if (!string.IsNullOrWhiteSpace(request.Name))
                 product.Name = request.Name.Trim();
@@ -144,13 +150,21 @@ public class ProductsController : ControllerBase
         }
     }
 
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     [HttpDelete("{id}")]
     public async Task<ActionResult> DeleteProduct(string id)
     {
         try
         {
-            if (!IsAdmin())
+            var product = await _productRepository.GetByIdAsync(id);
+            if (product == null)
+                return NotFound(new { message = "Không tìm thấy sản phẩm" });
+
+            var userId = GetCurrentUserId();
+            if (string.IsNullOrWhiteSpace(userId))
+                return Unauthorized(new { message = "Unauthorized" });
+
+            if (!IsAdmin() && !string.Equals(product.OwnerId, userId, StringComparison.OrdinalIgnoreCase))
                 return Forbid();
 
             var deleted = await _productRepository.DeleteAsync(id);
@@ -166,9 +180,15 @@ public class ProductsController : ControllerBase
         }
     }
 
+    private string? GetCurrentUserId()
+    {
+        return User.FindFirstValue(ClaimTypes.NameIdentifier);
+    }
+
     private bool IsAdmin()
     {
-        return string.Equals(User.FindFirst("role")?.Value, "Admin", StringComparison.OrdinalIgnoreCase);
+        return string.Equals(User.FindFirst(ClaimTypes.Role)?.Value, "Admin", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(User.FindFirst("role")?.Value, "Admin", StringComparison.OrdinalIgnoreCase);
     }
 }
 

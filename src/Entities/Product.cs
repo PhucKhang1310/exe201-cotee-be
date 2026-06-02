@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -21,4 +22,8 @@ public class Product
 
     [BsonElement("stock")]
     public int Stock { get; set; }
+
+    [BsonElement("ownerId")]
+    [JsonIgnore]
+    public string OwnerId { get; set; } = string.Empty;
 }
