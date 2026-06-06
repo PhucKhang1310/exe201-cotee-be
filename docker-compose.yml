@@ -10,7 +10,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       PORT: 8080
       MongoDbSettings__ConnectionString: mongodb://admin:admin123@mongodb:27017/?authSource=admin
-      MongoDbSettings__DatabaseName: CooTeeDb
+      MongoDbSettings__DatabaseName: CoTeeDB
       AppSettings__BaseUrl: http://localhost:5001
       MomoSettings__ReturnUrl: http://localhost:5001/api/orders/momo-return
       MomoSettings__IpnUrl: http://localhost:5001/api/orders/momo-ipn
@@ -29,7 +29,7 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: admin123
-      MONGO_INITDB_DATABASE: CooTeeDb
+      MONGO_INITDB_DATABASE: CoTeeDB
     volumes:
       - mongodb_data:/data/db
       - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro

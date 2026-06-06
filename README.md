@@ -76,7 +76,7 @@ docker-compose up -d
 Lệnh này sẽ khởi động MongoDB với:
 - Host: localhost
 - Port: 27017
-- Database: CooTeeDb
+- Database: CoTeeDB
 
 Nếu lệnh này báo lỗi, có thể Docker chưa chạy hoặc cổng 27017 đang bị chiếm. Khi đó hãy dùng cách 1 (MongoDB local) thay vì Docker.
 
@@ -113,7 +113,7 @@ mongosh "mongodb+srv://<username>:<password>@<cluster-url>/"
 Project đang dùng database tên:
 
 ```json
-"DatabaseName": "CooTeeDb"
+"DatabaseName": "CoTeeDB"
 ```
 
 Các collection sẽ được tạo tự động khi API lưu dữ liệu lần đầu.
@@ -125,7 +125,7 @@ Sửa nội dung trong `appsettings.json` hoặc `appsettings.Development.json`:
 {
   "MongoDbSettings": {
     "ConnectionString": "mongodb://localhost:27017",
-    "DatabaseName": "CooTeeDb"
+    "DatabaseName": "CoTeeDB"
   },
   "Jwt": {
     "SecretKey": "your-super-secret-key-here-min-32-characters-long",

@@ -29,7 +29,7 @@ Railway does not run `docker-compose.yml` directly in production. Use Compose lo
 ```text
 ASPNETCORE_ENVIRONMENT=Production
 MongoDbSettings__ConnectionString=<mongodb-connection-string>
-MongoDbSettings__DatabaseName=CooTeeDb
+MongoDbSettings__DatabaseName=CoTeeDB
 Jwt__SecretKey=<at-least-32-characters-no-quotes>
 Jwt__Issuer=CooTeeApi
 Jwt__Audience=CooTeeClient
@@ -91,7 +91,7 @@ For MongoDB Atlas, set the connection string in Railway as:
 
 ```text
 MongoDbSettings__ConnectionString=mongodb+srv://<username>:<password>@<cluster-host>/
-MongoDbSettings__DatabaseName=CooTeeDb
+MongoDbSettings__DatabaseName=CoTeeDB
 ```
 
 Keep the database name in `MongoDbSettings__DatabaseName`. The app will create collections when it first writes data.
