@@ -12,6 +12,8 @@ using CooTee.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
+LoadDotEnv(Path.Combine(builder.Environment.ContentRootPath, ".env"));
+
 
 
 
@@ -64,6 +66,9 @@ builder.Services.Configure<AppSettings>(
 builder.Services.Configure<MomoSettings>(
     builder.Configuration.GetSection("MomoSettings"));
 
+builder.Services.Configure<OpenAiSettings>(
+    builder.Configuration.GetSection("OpenAi"));
+
 
 builder.Services.AddSingleton(jwtSettings);
 builder.Services.AddSingleton(smtpSettings);
@@ -113,6 +118,18 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
+if (builder.Configuration.GetValue<bool>("OpenAi:UseMock"))
+{
+    builder.Services.AddScoped<IOpenAiImageService, OpenAiImageMockService>();
+    builder.Services.AddScoped<IOpenAiChatService, OpenAiChatMockService>();
+}
+else
+{
+    builder.Services.AddHttpClient<OpenAiImageRealService>();
+    builder.Services.AddHttpClient<OpenAiChatRealService>();
+    builder.Services.AddScoped<IOpenAiImageService, OpenAiImageRealService>();
+    builder.Services.AddScoped<IOpenAiChatService, OpenAiChatRealService>();
+}
 builder.Services.AddScoped<CartService>();
 builder.Services.AddScoped<OrderService>();
 builder.Services.AddHttpClient<OrderService>();
@@ -237,3 +254,27 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+static void LoadDotEnv(string path)
+{
+    if (!File.Exists(path))
+        return;
+
+    foreach (var rawLine in File.ReadAllLines(path))
+    {
+        var line = rawLine.Trim();
+        if (string.IsNullOrWhiteSpace(line) || line.StartsWith('#'))
+            continue;
+
+        var separatorIndex = line.IndexOf('=');
+        if (separatorIndex <= 0)
+            continue;
+
+        var key = line[..separatorIndex].Trim();
+        var value = line[(separatorIndex + 1)..].Trim().Trim('"', '\'');
+        if (string.IsNullOrWhiteSpace(key) || Environment.GetEnvironmentVariable(key) != null)
+            continue;
+
+        Environment.SetEnvironmentVariable(key, value);
+    }
+}
