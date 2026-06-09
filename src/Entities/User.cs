@@ -60,6 +60,18 @@ public class User
     [BsonIgnoreIfNull]
     public DateTime? TokenExpiresAt { get; set; }
 
+    [BsonElement("verificationEmailLastSentAt")]
+    [BsonIgnoreIfNull]
+    public DateTime? VerificationEmailLastSentAt { get; set; }
+
+    [BsonElement("passwordResetToken")]
+    [BsonIgnoreIfNull]
+    public string? PasswordResetToken { get; set; }
+
+    [BsonElement("passwordResetTokenExpiresAt")]
+    [BsonIgnoreIfNull]
+    public DateTime? PasswordResetTokenExpiresAt { get; set; }
+
     
     
     

@@ -23,6 +23,8 @@ public interface IAuthService
     
     Task<VerificationResult> VerifyEmailAsync(string token);
 
+    Task<VerificationResult> ResendVerificationEmailAsync(string email);
+
     
     
     
@@ -69,7 +71,6 @@ public class AuthResult
     public bool IsSuccess { get; set; }
     public string? Message { get; set; }
     public User? User { get; set; }
-    public string? VerificationUrl { get; set; }
     public string? Token { get; set; }
     public DateTime? TokenExpiresAt { get; set; }
 }

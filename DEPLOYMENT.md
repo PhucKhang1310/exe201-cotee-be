@@ -20,7 +20,7 @@ This backend is prepared for Railway deployment with Docker.
 5. Railway should detect the root `Dockerfile`.
 6. Add the production variables below in the service Variables tab.
 7. Open the service Settings tab and generate a Railway domain under Public Networking.
-8. Update `AppSettings__BaseUrl`, `MomoSettings__ReturnUrl`, and `MomoSettings__IpnUrl` to use the generated HTTPS domain.
+8. Update `AppSettings__BaseUrl`, `AppSettings__FrontendBaseUrl`, `MomoSettings__ReturnUrl`, and `MomoSettings__IpnUrl` with the deployed URLs.
 
 Railway does not run `docker-compose.yml` directly in production. Use Compose locally, and let Railway deploy the API service from the Dockerfile.
 
@@ -42,6 +42,8 @@ SmtpSettings__FromEmail=<sender-email>
 SmtpSettings__FromName=CooTee Account
 SmtpSettings__EnableSSL=true
 AppSettings__BaseUrl=https://your-service.up.railway.app
+AppSettings__FrontendBaseUrl=https://your-frontend.vercel.app
+AppSettings__VerificationEmailResendCooldownSeconds=60
 Swagger__Enabled=true
 MomoSettings__PartnerCode=<momo-partner-code>
 MomoSettings__AccessKey=<momo-access-key>
@@ -49,6 +51,14 @@ MomoSettings__SecretKey=<momo-secret-key>
 MomoSettings__Endpoint=<momo-create-payment-endpoint>
 MomoSettings__ReturnUrl=https://your-service.up.railway.app/api/orders/momo-return
 MomoSettings__IpnUrl=https://your-service.up.railway.app/api/orders/momo-ipn
+```
+
+For databases initialized by an older version, remove the user-deleting token TTL index once:
+
+```javascript
+db.users.dropIndex("token_expiration_ttl")
+db.users.createIndex({ verificationToken: 1 }, { sparse: true, name: "verification_token_index" })
+db.users.createIndex({ passwordResetToken: 1 }, { sparse: true, name: "password_reset_token_index" })
 ```
 
 Do not set `ASPNETCORE_URLS` on Railway. Railway injects `PORT`, and the Dockerfile maps that to `ASPNETCORE_URLS` at container startup.

@@ -1,9 +1,11 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Cryptography;
 using System.Security.Claims;
 using System.Text;
 using CooTee.Configuration;
 using CooTee.Entities;
 using CooTee.Infrastructure.Repositories;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.IdentityModel.Tokens;
 
 namespace CooTee.Services;
@@ -58,6 +60,9 @@ public class AuthService : IAuthService
                 };
             }
 
+            email = NormalizeEmail(email);
+            fullName = fullName.Trim();
+
             
             if (!IsValidEmail(email))
             {
@@ -107,6 +112,7 @@ public class AuthService : IAuthService
                 IsEmailVerified = false,
                 VerificationToken = verificationToken,
                 TokenExpiresAt = tokenExpiresAt,
+                VerificationEmailLastSentAt = DateTime.UtcNow,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -117,7 +123,7 @@ public class AuthService : IAuthService
             _logger.LogInformation("User registered successfully: {Email}", email);
 
             
-            string verificationUrl = $"{_appSettings.BaseUrl}/api/auth/verify-email?token={verificationToken}";
+            string verificationUrl = BuildFrontendUrl("/verify-email", "token", verificationToken);
 
             
             bool emailSent = await _emailService.SendVerificationEmailAsync(
@@ -136,8 +142,7 @@ public class AuthService : IAuthService
             {
                 IsSuccess = true,
                 Message = "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản",
-                User = createdUser,
-                VerificationUrl = verificationUrl
+                User = createdUser
             };
         }
         catch (Exception ex)
@@ -169,8 +174,7 @@ public class AuthService : IAuthService
             }
 
             
-            var users = await _userRepository.GetAllAsync();
-            var user = users.FirstOrDefault(u => u.VerificationToken == token);
+            var user = await _userRepository.FindOneAsync("verificationToken", token);
 
             if (user == null)
             {
@@ -183,7 +187,7 @@ public class AuthService : IAuthService
             }
 
             
-            if (user.TokenExpiresAt.HasValue && user.TokenExpiresAt < DateTime.UtcNow)
+            if (!user.TokenExpiresAt.HasValue || user.TokenExpiresAt <= DateTime.UtcNow)
             {
                 _logger.LogWarning("Verification token expired for user: {Email}", user.Email);
                 return new VerificationResult
@@ -247,6 +251,67 @@ public class AuthService : IAuthService
         }
     }
 
+    public async Task<VerificationResult> ResendVerificationEmailAsync(string email)
+    {
+        const string genericMessage = "Nếu tài khoản tồn tại và chưa được xác nhận, email xác minh mới sẽ được gửi";
+
+        try
+        {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                return new VerificationResult { IsSuccess = false, Message = "Địa chỉ email không hợp lệ" };
+            }
+
+            email = NormalizeEmail(email);
+            if (!IsValidEmail(email))
+            {
+                return new VerificationResult { IsSuccess = false, Message = "Địa chỉ email không hợp lệ" };
+            }
+
+            var user = await _userRepository.FindOneAsync("email", email);
+            if (user == null || user.IsEmailVerified || !user.IsActive)
+            {
+                return new VerificationResult { IsSuccess = true, Message = genericMessage };
+            }
+
+            var resendAvailableAt = user.VerificationEmailLastSentAt?.AddSeconds(
+                _appSettings.VerificationEmailResendCooldownSeconds);
+            if (resendAvailableAt > DateTime.UtcNow)
+            {
+                return new VerificationResult { IsSuccess = true, Message = genericMessage };
+            }
+
+            var verificationToken = GenerateRandomToken(_appSettings.VerificationTokenLength);
+            user.VerificationToken = verificationToken;
+            user.TokenExpiresAt = DateTime.UtcNow.AddMinutes(_appSettings.VerificationTokenExpirationMinutes);
+            user.VerificationEmailLastSentAt = DateTime.UtcNow;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            var updateResult = await _userRepository.UpdateAsync(user.Id, user);
+            if (!updateResult.IsSuccess)
+            {
+                _logger.LogError("Failed to refresh verification token for user: {Email}", email);
+                return new VerificationResult { IsSuccess = false, Message = "Không thể gửi lại email xác minh" };
+            }
+
+            var verificationUrl = BuildFrontendUrl("/verify-email", "token", verificationToken);
+            var emailSent = await _emailService.SendVerificationEmailAsync(
+                user.Email, user.FullName, verificationToken, verificationUrl);
+
+            if (!emailSent)
+            {
+                _logger.LogWarning("Failed to resend verification email to: {Email}", email);
+            }
+
+            return new VerificationResult { IsSuccess = true, Message = genericMessage };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error resending verification email for: {Email}", email);
+            return new VerificationResult { IsSuccess = false, Message = "Không thể gửi lại email xác minh" };
+        }
+    }
+
     
     
     
@@ -263,6 +328,8 @@ public class AuthService : IAuthService
                     Message = "Email và mật khẩu không được để trống"
                 };
             }
+
+            email = NormalizeEmail(email);
 
             
             var user = await _userRepository.FindOneAsync("email", email);
@@ -390,6 +457,8 @@ public class AuthService : IAuthService
                 };
             }
 
+            email = NormalizeEmail(email);
+
             
             var user = await _userRepository.FindOneAsync("email", email);
 
@@ -409,14 +478,14 @@ public class AuthService : IAuthService
             DateTime tokenExpiresAt = DateTime.UtcNow.AddMinutes(_appSettings.VerificationTokenExpirationMinutes);
 
             
-            user.VerificationToken = resetToken;
-            user.TokenExpiresAt = tokenExpiresAt;
+            user.PasswordResetToken = resetToken;
+            user.PasswordResetTokenExpiresAt = tokenExpiresAt;
             user.UpdatedAt = DateTime.UtcNow;
 
             await _userRepository.UpdateAsync(user.Id, user);
 
             
-            string resetUrl = $"{_appSettings.BaseUrl}/reset-password?token={resetToken}";
+            string resetUrl = BuildUrl("/reset-password", "token", resetToken);
 
             
             await _emailService.SendPasswordResetEmailAsync(user.Email, user.FullName, resetToken, resetUrl);
@@ -468,8 +537,7 @@ public class AuthService : IAuthService
             }
 
             
-            var users = await _userRepository.GetAllAsync();
-            var user = users.FirstOrDefault(u => u.VerificationToken == token);
+            var user = await _userRepository.FindOneAsync("passwordResetToken", token);
 
             if (user == null)
             {
@@ -482,7 +550,7 @@ public class AuthService : IAuthService
             }
 
             
-            if (user.TokenExpiresAt.HasValue && user.TokenExpiresAt < DateTime.UtcNow)
+            if (!user.PasswordResetTokenExpiresAt.HasValue || user.PasswordResetTokenExpiresAt <= DateTime.UtcNow)
             {
                 _logger.LogWarning("Password reset token expired for user: {Email}", user.Email);
                 return new PasswordResetResult
@@ -497,8 +565,8 @@ public class AuthService : IAuthService
 
             
             user.PasswordHash = newPasswordHash;
-            user.VerificationToken = null;
-            user.TokenExpiresAt = null;
+            user.PasswordResetToken = null;
+            user.PasswordResetTokenExpiresAt = null;
             user.UpdatedAt = DateTime.UtcNow;
 
             var updateResult = await _userRepository.UpdateAsync(user.Id, user);
@@ -588,17 +656,23 @@ public class AuthService : IAuthService
     
     private string GenerateRandomToken(int length)
     {
-        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        var random = new Random();
-        var token = new StringBuilder();
-
-        for (int i = 0; i < length; i++)
-        {
-            token.Append(chars[random.Next(chars.Length)]);
-        }
-
-        return token.ToString();
+        var bytes = RandomNumberGenerator.GetBytes(length);
+        return WebEncoders.Base64UrlEncode(bytes);
     }
+
+    private string BuildUrl(string path, string queryName, string queryValue)
+    {
+        var baseUrl = _appSettings.BaseUrl.TrimEnd('/');
+        return QueryHelpers.AddQueryString($"{baseUrl}{path}", queryName, queryValue);
+    }
+
+    private string BuildFrontendUrl(string path, string queryName, string queryValue)
+    {
+        var baseUrl = _appSettings.FrontendBaseUrl.TrimEnd('/');
+        return QueryHelpers.AddQueryString($"{baseUrl}{path}", queryName, queryValue);
+    }
+
+    private static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
 
     
     

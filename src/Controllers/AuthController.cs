@@ -48,8 +48,7 @@ public class AuthController : ControllerBase
             return CreatedAtAction(nameof(Register), new RegisterResponse
             {
                 Message = result.Message,
-                Email = result.User?.Email,
-                VerificationUrl = result.VerificationUrl
+                Email = result.User?.Email
             });
         }
         catch (Exception ex)
@@ -95,6 +94,23 @@ public class AuthController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError,
                 new { message = "Lỗi khi xác minh email" });
         }
+    }
+
+    [HttpPost("resend-verification")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ResendVerificationResponse>> ResendVerification(
+        [FromBody] ResendVerificationRequest request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var result = await _authService.ResendVerificationEmailAsync(request.Email);
+        if (!result.IsSuccess)
+            return BadRequest(new { message = result.Message });
+
+        return Ok(new ResendVerificationResponse { Message = result.Message });
     }
 
     
@@ -254,7 +270,6 @@ public class RegisterResponse
 {
     public string? Message { get; set; }
     public string? Email { get; set; }
-    public string? VerificationUrl { get; set; }
 }
 
 
@@ -266,6 +281,16 @@ public class VerifyEmailResponse
     public string? Email { get; set; }
     public string? FullName { get; set; }
     public bool IsEmailVerified { get; set; }
+}
+
+public class ResendVerificationRequest
+{
+    public string Email { get; set; } = string.Empty;
+}
+
+public class ResendVerificationResponse
+{
+    public string? Message { get; set; }
 }
 
 

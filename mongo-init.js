@@ -15,10 +15,13 @@ db.createCollection('users', {
         email: { bsonType: 'string', pattern: '^[^@]+@[^@]+\\.[^@]+$' },
         passwordHash: { bsonType: 'string' },
         fullName: { bsonType: 'string' },
-        role: { bsonType: 'string', enum: ['User', 'Admin', 'Manager'] },
+        role: { bsonType: 'string', enum: ['Customer', 'User', 'Admin', 'Manager'] },
         isEmailVerified: { bsonType: 'bool' },
         verificationToken: { bsonType: ['string', 'null'] },
         tokenExpiresAt: { bsonType: ['date', 'null'] },
+        verificationEmailLastSentAt: { bsonType: ['date', 'null'] },
+        passwordResetToken: { bsonType: ['string', 'null'] },
+        passwordResetTokenExpiresAt: { bsonType: ['date', 'null'] },
         createdAt: { bsonType: 'date' },
         updatedAt: { bsonType: 'date' },
         isActive: { bsonType: 'bool' }
@@ -35,10 +38,15 @@ db.users.createIndex(
   { unique: true, name: 'email_unique' }
 );
 
-// TTL index for token expiration (documents expire 0 seconds after tokenExpiresAt)
+// Tokens are validated by the API. A TTL index here would delete the entire user document.
 db.users.createIndex(
-  { tokenExpiresAt: 1 },
-  { expireAfterSeconds: 0, name: 'token_expiration_ttl' }
+  { verificationToken: 1 },
+  { sparse: true, name: 'verification_token_index' }
+);
+
+db.users.createIndex(
+  { passwordResetToken: 1 },
+  { sparse: true, name: 'password_reset_token_index' }
 );
 
 // Index on role for faster filtering

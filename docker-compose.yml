@@ -11,7 +11,16 @@ services:
       PORT: 8080
       MongoDbSettings__ConnectionString: mongodb://admin:admin123@mongodb:27017/?authSource=admin
       MongoDbSettings__DatabaseName: CoTeeDB
-      AppSettings__BaseUrl: http://localhost:5001
+      AppSettings__BaseUrl: ${AppSettings__BaseUrl:-http://localhost:5001}
+      AppSettings__FrontendBaseUrl: ${AppSettings__FrontendBaseUrl:-http://localhost:5173}
+      AppSettings__VerificationEmailResendCooldownSeconds: ${AppSettings__VerificationEmailResendCooldownSeconds:-60}
+      SmtpSettings__Host: ${SmtpSettings__Host:-smtp.gmail.com}
+      SmtpSettings__Port: ${SmtpSettings__Port:-587}
+      SmtpSettings__Username: ${SmtpSettings__Username:-your-email@gmail.com}
+      SmtpSettings__Password: ${SmtpSettings__Password:-your-app-password}
+      SmtpSettings__FromEmail: ${SmtpSettings__FromEmail:-your-email@gmail.com}
+      SmtpSettings__FromName: ${SmtpSettings__FromName:-CooTee Account}
+      SmtpSettings__EnableSSL: ${SmtpSettings__EnableSSL:-true}
       MomoSettings__ReturnUrl: http://localhost:5001/api/orders/momo-return
       MomoSettings__IpnUrl: http://localhost:5001/api/orders/momo-ipn
     depends_on:

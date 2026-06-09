@@ -180,6 +180,8 @@ dotnet build
 
 ### 3. Chạy local
 ```bash
+cp .env.example .env
+# Điền thông tin SMTP thật trong .env
 dotnet run
 ```
 
@@ -193,6 +195,7 @@ Sau khi chạy, API sẽ sẵn sàng tại:
 ### Xác thực
 - POST /api/auth/register
 - GET /api/auth/verify-email?token=...
+- POST /api/auth/resend-verification
 - POST /api/auth/login
 - POST /api/auth/forgot-password
 - POST /api/auth/reset-password
