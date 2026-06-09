@@ -99,8 +99,13 @@ public class AuthService : IAuthService
             string passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
 
             
-            string verificationToken = GenerateRandomToken(_appSettings.VerificationTokenLength);
-            DateTime tokenExpiresAt = DateTime.UtcNow.AddMinutes(_appSettings.VerificationTokenExpirationMinutes);
+            var autoVerifyEmail = _appSettings.AutoVerifyEmailOnRegistration;
+            string? verificationToken = autoVerifyEmail
+                ? null
+                : GenerateRandomToken(_appSettings.VerificationTokenLength);
+            DateTime? tokenExpiresAt = autoVerifyEmail
+                ? null
+                : DateTime.UtcNow.AddMinutes(_appSettings.VerificationTokenExpirationMinutes);
 
             
             var newUser = new User
@@ -109,10 +114,10 @@ public class AuthService : IAuthService
                 PasswordHash = passwordHash,
                 FullName = fullName,
                 Role = "Customer",
-                IsEmailVerified = false,
+                IsEmailVerified = autoVerifyEmail,
                 VerificationToken = verificationToken,
                 TokenExpiresAt = tokenExpiresAt,
-                VerificationEmailLastSentAt = DateTime.UtcNow,
+                VerificationEmailLastSentAt = autoVerifyEmail ? null : DateTime.UtcNow,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -123,25 +128,27 @@ public class AuthService : IAuthService
             _logger.LogInformation("User registered successfully: {Email}", email);
 
             
-            string verificationUrl = BuildFrontendUrl("/verify-email", "token", verificationToken);
-
-            
-            bool emailSent = await _emailService.SendVerificationEmailAsync(
-                email, 
-                fullName, 
-                verificationToken, 
-                verificationUrl);
-
-            if (!emailSent)
+            if (!autoVerifyEmail)
             {
-                _logger.LogWarning("Failed to send verification email to: {Email}", email);
-                
+                string verificationUrl = BuildFrontendUrl("/verify-email", "token", verificationToken!);
+                bool emailSent = await _emailService.SendVerificationEmailAsync(
+                    email,
+                    fullName,
+                    verificationToken!,
+                    verificationUrl);
+
+                if (!emailSent)
+                {
+                    _logger.LogWarning("Failed to send verification email to: {Email}", email);
+                }
             }
 
             return new AuthResult
             {
                 IsSuccess = true,
-                Message = "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản",
+                Message = autoVerifyEmail
+                    ? "Đăng ký thành công! Bạn có thể đăng nhập ngay"
+                    : "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản",
                 User = createdUser
             };
         }
@@ -364,6 +371,25 @@ public class AuthService : IAuthService
                     IsSuccess = false,
                     Message = "Email hoặc mật khẩu không đúng"
                 };
+            }
+
+            if (_appSettings.AutoVerifyEmailOnRegistration && !user.IsEmailVerified)
+            {
+                user.IsEmailVerified = true;
+                user.VerificationToken = null;
+                user.TokenExpiresAt = null;
+                user.UpdatedAt = DateTime.UtcNow;
+
+                var updateResult = await _userRepository.UpdateAsync(user.Id, user);
+                if (!updateResult.IsSuccess)
+                {
+                    _logger.LogError("Failed to auto-verify user during login: {Email}", email);
+                    return new LoginResult
+                    {
+                        IsSuccess = false,
+                        Message = "Lỗi khi cập nhật xác minh email"
+                    };
+                }
             }
 
             

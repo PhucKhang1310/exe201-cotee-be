@@ -21,7 +21,6 @@ public class EmailService : IEmailService
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _resendSettings = resendSettings ?? throw new ArgumentNullException(nameof(resendSettings));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _resendSettings.Validate();
     }
 
     

@@ -39,7 +39,8 @@ try
 {
     mongoDbSettings.Validate();
     jwtSettings.Validate();
-    resendSettings.Validate();
+    if (!appSettings.AutoVerifyEmailOnRegistration)
+        resendSettings.Validate();
     appSettings.Validate();
     momoSettings.Validate();
 }

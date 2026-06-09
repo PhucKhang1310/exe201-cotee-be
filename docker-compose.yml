@@ -14,6 +14,7 @@ services:
       AppSettings__BaseUrl: ${AppSettings__BaseUrl:-http://localhost:5001}
       AppSettings__FrontendBaseUrl: ${AppSettings__FrontendBaseUrl:-http://localhost:5173}
       AppSettings__VerificationEmailResendCooldownSeconds: ${AppSettings__VerificationEmailResendCooldownSeconds:-60}
+      AppSettings__AutoVerifyEmailOnRegistration: ${AppSettings__AutoVerifyEmailOnRegistration:-true}
       ResendSettings__ApiKey: ${ResendSettings__ApiKey:-re_your_api_key}
       ResendSettings__ApiBaseUrl: ${ResendSettings__ApiBaseUrl:-https://api.resend.com}
       ResendSettings__FromEmail: ${ResendSettings__FromEmail:-onboarding@resend.dev}

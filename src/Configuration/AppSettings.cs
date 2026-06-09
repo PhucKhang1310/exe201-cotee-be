@@ -26,6 +26,8 @@ public class AppSettings
 
     public int VerificationEmailResendCooldownSeconds { get; set; } = 60;
 
+    public bool AutoVerifyEmailOnRegistration { get; set; }
+
     
     
     

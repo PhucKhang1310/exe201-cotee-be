@@ -41,6 +41,7 @@ ResendSettings__FromName=CooTee Account
 AppSettings__BaseUrl=https://your-service.up.railway.app
 AppSettings__FrontendBaseUrl=https://your-frontend.vercel.app
 AppSettings__VerificationEmailResendCooldownSeconds=60
+AppSettings__AutoVerifyEmailOnRegistration=true
 Swagger__Enabled=true
 MomoSettings__PartnerCode=<momo-partner-code>
 MomoSettings__AccessKey=<momo-access-key>
@@ -51,6 +52,8 @@ MomoSettings__IpnUrl=https://your-service.up.railway.app/api/orders/momo-ipn
 ```
 
 For initial Resend testing, `onboarding@resend.dev` can only send to the email address associated with the Resend account. Verify a domain in Resend and use an address on that domain for production delivery.
+
+`AppSettings__AutoVerifyEmailOnRegistration=true` temporarily bypasses verification emails. Set it to `false` after Resend is ready.
 
 For databases initialized by an older version, remove the user-deleting token TTL index once:
 

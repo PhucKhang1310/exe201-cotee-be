@@ -48,7 +48,8 @@ public class AuthController : ControllerBase
             return CreatedAtAction(nameof(Register), new RegisterResponse
             {
                 Message = result.Message,
-                Email = result.User?.Email
+                Email = result.User?.Email,
+                IsEmailVerified = result.User?.IsEmailVerified ?? false
             });
         }
         catch (Exception ex)
@@ -270,6 +271,7 @@ public class RegisterResponse
 {
     public string? Message { get; set; }
     public string? Email { get; set; }
+    public bool IsEmailVerified { get; set; }
 }
 
 
