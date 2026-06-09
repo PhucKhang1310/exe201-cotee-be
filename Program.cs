@@ -23,8 +23,8 @@ builder.Configuration.GetSection("MongoDbSettings").Bind(mongoDbSettings);
 var jwtSettings = new JwtSettings();
 builder.Configuration.GetSection("Jwt").Bind(jwtSettings);
 
-var smtpSettings = new SmtpSettings();
-builder.Configuration.GetSection("SmtpSettings").Bind(smtpSettings);
+var resendSettings = new ResendSettings();
+builder.Configuration.GetSection("ResendSettings").Bind(resendSettings);
 
 var appSettings = new AppSettings();
 builder.Configuration.GetSection("AppSettings").Bind(appSettings);
@@ -39,7 +39,7 @@ try
 {
     mongoDbSettings.Validate();
     jwtSettings.Validate();
-    smtpSettings.Validate();
+    resendSettings.Validate();
     appSettings.Validate();
     momoSettings.Validate();
 }
@@ -57,8 +57,8 @@ builder.Services.Configure<MongoDbSettings>(
 builder.Services.Configure<JwtSettings>(
     builder.Configuration.GetSection("Jwt"));
 
-builder.Services.Configure<SmtpSettings>(
-    builder.Configuration.GetSection("SmtpSettings"));
+builder.Services.Configure<ResendSettings>(
+    builder.Configuration.GetSection("ResendSettings"));
 
 builder.Services.Configure<AppSettings>(
     builder.Configuration.GetSection("AppSettings"));
@@ -71,7 +71,7 @@ builder.Services.Configure<OpenAiSettings>(
 
 
 builder.Services.AddSingleton(jwtSettings);
-builder.Services.AddSingleton(smtpSettings);
+builder.Services.AddSingleton(resendSettings);
 builder.Services.AddSingleton(appSettings);
 builder.Services.AddSingleton(momoSettings);
 
@@ -111,7 +111,11 @@ builder.Services.AddScoped<IMongoRepository<BlacklistedToken>>(serviceProvider =
 
 
 
-builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddHttpClient<IEmailService, EmailService>(client =>
+{
+    client.BaseAddress = new Uri(resendSettings.ApiBaseUrl.TrimEnd('/') + "/");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 
 
 

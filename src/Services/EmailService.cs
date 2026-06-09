@@ -1,7 +1,6 @@
 using CooTee.Configuration;
-using MailKit.Net.Smtp;
-using MailKit.Security;
-using MimeKit;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 
 namespace CooTee.Services;
 
@@ -10,14 +9,19 @@ namespace CooTee.Services;
 
 public class EmailService : IEmailService
 {
-    private readonly SmtpSettings _smtpSettings;
+    private readonly HttpClient _httpClient;
+    private readonly ResendSettings _resendSettings;
     private readonly ILogger<EmailService> _logger;
 
-    public EmailService(SmtpSettings smtpSettings, ILogger<EmailService> logger)
+    public EmailService(
+        HttpClient httpClient,
+        ResendSettings resendSettings,
+        ILogger<EmailService> logger)
     {
-        _smtpSettings = smtpSettings ?? throw new ArgumentNullException(nameof(smtpSettings));
+        _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        _resendSettings = resendSettings ?? throw new ArgumentNullException(nameof(resendSettings));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _smtpSettings.Validate();
+        _resendSettings.Validate();
     }
 
     
@@ -37,43 +41,26 @@ public class EmailService : IEmailService
                 return false;
             }
 
-            
-            var message = new MimeMessage();
-            
-            
-            message.From.Add(new MailboxAddress(_smtpSettings.FromName, _smtpSettings.FromEmail));
-            
-            
-            message.To.Add(new MailboxAddress(toName, toEmail));
-            
-            
-            message.Subject = subject;
-
-            
-            var bodyBuilder = new BodyBuilder
+            using var request = new HttpRequestMessage(HttpMethod.Post, "emails");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _resendSettings.ApiKey);
+            request.Content = JsonContent.Create(new
             {
-                HtmlBody = htmlBody
-            };
-            message.Body = bodyBuilder.ToMessageBody();
+                from = $"{_resendSettings.FromName} <{_resendSettings.FromEmail}>",
+                to = new[] { toEmail },
+                subject,
+                html = htmlBody
+            });
 
-            
-            using (var client = new SmtpClient())
+            using var response = await _httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
             {
-                
-                SecureSocketOptions socketOptions = _smtpSettings.EnableSSL 
-                    ? SecureSocketOptions.StartTlsWhenAvailable 
-                    : SecureSocketOptions.None;
-
-                await client.ConnectAsync(_smtpSettings.Host, _smtpSettings.Port, socketOptions);
-
-                
-                await client.AuthenticateAsync(_smtpSettings.Username, _smtpSettings.Password);
-
-                
-                await client.SendAsync(message);
-
-                
-                await client.DisconnectAsync(true);
+                var responseBody = await response.Content.ReadAsStringAsync();
+                _logger.LogError(
+                    "Resend rejected email to {ToEmail}. Status: {StatusCode}. Response: {ResponseBody}",
+                    toEmail,
+                    (int)response.StatusCode,
+                    responseBody);
+                return false;
             }
 
             _logger.LogInformation("Email sent successfully to {ToEmail} with subject: {Subject}", 

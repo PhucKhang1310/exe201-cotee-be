@@ -34,13 +34,10 @@ Jwt__SecretKey=<at-least-32-characters-no-quotes>
 Jwt__Issuer=CooTeeApi
 Jwt__Audience=CooTeeClient
 Jwt__ExpirationMinutes=60
-SmtpSettings__Host=<smtp-host>
-SmtpSettings__Port=587
-SmtpSettings__Username=<smtp-username>
-SmtpSettings__Password=<smtp-password>
-SmtpSettings__FromEmail=<sender-email>
-SmtpSettings__FromName=CooTee Account
-SmtpSettings__EnableSSL=true
+ResendSettings__ApiKey=<resend-api-key>
+ResendSettings__ApiBaseUrl=https://api.resend.com
+ResendSettings__FromEmail=<verified-resend-sender>
+ResendSettings__FromName=CooTee Account
 AppSettings__BaseUrl=https://your-service.up.railway.app
 AppSettings__FrontendBaseUrl=https://your-frontend.vercel.app
 AppSettings__VerificationEmailResendCooldownSeconds=60
@@ -52,6 +49,8 @@ MomoSettings__Endpoint=<momo-create-payment-endpoint>
 MomoSettings__ReturnUrl=https://your-service.up.railway.app/api/orders/momo-return
 MomoSettings__IpnUrl=https://your-service.up.railway.app/api/orders/momo-ipn
 ```
+
+For initial Resend testing, `onboarding@resend.dev` can only send to the email address associated with the Resend account. Verify a domain in Resend and use an address on that domain for production delivery.
 
 For databases initialized by an older version, remove the user-deleting token TTL index once:
 

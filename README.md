@@ -22,7 +22,7 @@ CooTee API là một REST API được xây dựng bằng ASP.NET Core 8, dùng 
 - Phân quyền theo vai trò: Customer, Admin
 - MongoDB repository pattern
 - BCrypt password hashing
-- SMTP email verification và password reset
+- Resend API email verification và password reset
 - MoMo payment gateway integration + IPN callback
 - Swagger UI cho thử API
 
@@ -31,7 +31,7 @@ CooTee API là một REST API được xây dựng bằng ASP.NET Core 8, dùng 
 - MongoDB.Driver
 - JWT Bearer Authentication
 - BCrypt.Net-Next
-- MailKit / MimeKit
+- Resend Email API over HTTPS
 - Swashbuckle.AspNetCore
 - Serilog.AspNetCore
 
@@ -45,7 +45,7 @@ CooTee API là một REST API được xây dựng bằng ASP.NET Core 8, dùng 
 ## Yêu cầu hệ thống
 - .NET 8 SDK
 - MongoDB chạy local tại mongodb://localhost:27017 hoặc MongoDB Atlas
-- SMTP để bật tính năng gửi email xác thực / reset mật khẩu
+- Resend API key và sender đã xác minh để gửi email xác thực / reset mật khẩu
 - Tài khoản MoMo test nếu muốn chạy luồng thanh toán thật
 
 ## Hướng dẫn setup MongoDB
@@ -139,14 +139,11 @@ Sửa nội dung trong `appsettings.json` hoặc `appsettings.Development.json`:
     "Audience": "CooTeeClient",
     "ExpirationMinutes": 60
   },
-  "SmtpSettings": {
-    "Host": "smtp.gmail.com",
-    "Port": 587,
-    "Username": "your-email@gmail.com",
-    "Password": "your-app-password",
-    "FromEmail": "your-email@gmail.com",
-    "FromName": "CooTee Account",
-    "EnableSSL": true
+  "ResendSettings": {
+    "ApiKey": "re_your_api_key",
+    "ApiBaseUrl": "https://api.resend.com",
+    "FromEmail": "onboarding@resend.dev",
+    "FromName": "CooTee Account"
   },
   "MomoSettings": {
     "PartnerCode": "MOMO_PARTNER_CODE",
@@ -181,7 +178,7 @@ dotnet build
 ### 3. Chạy local
 ```bash
 cp .env.example .env
-# Điền thông tin SMTP thật trong .env
+# Điền Resend API key và sender trong .env
 dotnet run
 ```
 
@@ -236,8 +233,8 @@ Sau khi chạy, API sẽ sẵn sàng tại:
 
 ## Lưu ý quan trọng
 - Để sử dụng luồng thanh toán MoMo, cần cung cấp đúng `PartnerCode`, `AccessKey`, `SecretKey` và endpoint test của MoMo.
-- Nếu SMTP chưa được cấu hình, chức năng gửi email xác thực / reset mật khẩu sẽ bị ảnh hưởng.
-- Khi deploy production, nên bật HTTPS và dùng biến môi trường cho `Jwt:SecretKey`, `MomoSettings`, `SmtpSettings`.
+- Nếu Resend chưa được cấu hình, chức năng gửi email xác thực / reset mật khẩu sẽ bị ảnh hưởng.
+- Khi deploy production, nên bật HTTPS và dùng biến môi trường cho `Jwt:SecretKey`, `MomoSettings`, `ResendSettings`.
 
 ## Kết luận
 Dự án này cung cấp nền tảng backend hoàn chỉnh cho một hệ thống bán hàng nhỏ đến vừa, phù hợp để phát triển tiếp các tính năng như thanh toán thật, phân tích đơn hàng, quản lý kho, voucher và dashboard admin.
