@@ -19,7 +19,7 @@ services:
       ResendSettings__ApiBaseUrl: ${ResendSettings__ApiBaseUrl:-https://api.resend.com}
       ResendSettings__FromEmail: ${ResendSettings__FromEmail:-onboarding@resend.dev}
       ResendSettings__FromName: ${ResendSettings__FromName:-CoTee Account}
-      MomoSettings__ReturnUrl: http://localhost:5001/api/orders/momo-return
+      MomoSettings__RedirectUrl: http://localhost:5173/payment-result
       MomoSettings__IpnUrl: http://localhost:5001/api/orders/momo-ipn
     depends_on:
       mongodb:

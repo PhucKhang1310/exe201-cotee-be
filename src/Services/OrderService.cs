@@ -65,6 +65,16 @@ public class OrderService
             ValidateUserId(userId);
             if (shippingDetails == null)
                 throw new ArgumentNullException(nameof(shippingDetails));
+            if (string.IsNullOrWhiteSpace(shippingDetails.FullName) ||
+                string.IsNullOrWhiteSpace(shippingDetails.Phone) ||
+                string.IsNullOrWhiteSpace(shippingDetails.Address))
+            {
+                throw new InvalidOperationException("Thông tin giao hàng không được để trống");
+            }
+
+            shippingDetails.FullName = shippingDetails.FullName.Trim();
+            shippingDetails.Phone = shippingDetails.Phone.Trim();
+            shippingDetails.Address = shippingDetails.Address.Trim();
 
             var userObjectId = ObjectId.Parse(userId);
             var cart = await _cartCollection.Find(Builders<Cart>.Filter.Eq("userId", userObjectId)).FirstOrDefaultAsync();
@@ -119,21 +129,36 @@ public class OrderService
             var requestId = Guid.NewGuid().ToString("N");
             var extraData = string.Empty;
             var orderInfo = $"Thanh toán đơn hàng {orderCode}";
-            var rawData = $"partnerCode={_momoSettings.PartnerCode}&accessKey={_momoSettings.AccessKey}&requestId={requestId}&amount={totalAmount}&orderId={orderCode}&orderInfo={orderInfo}&returnUrl={_momoSettings.ReturnUrl}&notifyUrl={_momoSettings.IpnUrl}&extraData={extraData}&requestType=captureWallet";
+            var requestType = "captureWallet";
+            var rawData = string.Join("&", new[]
+            {
+                $"accessKey={_momoSettings.AccessKey}",
+                $"amount={totalAmount}",
+                $"extraData={extraData}",
+                $"ipnUrl={_momoSettings.IpnUrl}",
+                $"orderId={orderCode}",
+                $"orderInfo={orderInfo}",
+                $"partnerCode={_momoSettings.PartnerCode}",
+                $"redirectUrl={_momoSettings.RedirectUrl}",
+                $"requestId={requestId}",
+                $"requestType={requestType}"
+            });
             var signature = ComputeHmacSha256(rawData, _momoSettings.SecretKey);
 
             var momoRequest = new
             {
                 partnerCode = _momoSettings.PartnerCode,
-                accessKey = _momoSettings.AccessKey,
+                partnerName = _momoSettings.PartnerName,
+                storeId = _momoSettings.StoreId,
                 requestId,
                 amount = totalAmount,
                 orderId = orderCode,
                 orderInfo,
-                returnUrl = _momoSettings.ReturnUrl,
-                notifyUrl = _momoSettings.IpnUrl,
+                redirectUrl = _momoSettings.RedirectUrl,
+                ipnUrl = _momoSettings.IpnUrl,
+                lang = _momoSettings.Language,
                 extraData,
-                requestType = "captureWallet",
+                requestType,
                 signature
             };
 
@@ -147,8 +172,11 @@ public class OrderService
                 throw new HttpRequestException($"MoMo API call failed with status {response.StatusCode}: {responseBody}");
 
             var paymentResponse = JsonSerializer.Deserialize<MomoPaymentResponse>(responseBody);
-            if (paymentResponse == null || string.IsNullOrWhiteSpace(paymentResponse.PayUrl))
-                throw new InvalidOperationException("MoMo không trả về payUrl hợp lệ");
+            if (paymentResponse == null)
+                throw new InvalidOperationException("MoMo không trả về phản hồi hợp lệ");
+
+            if (paymentResponse.ResultCode != 0 || string.IsNullOrWhiteSpace(paymentResponse.PayUrl))
+                throw new InvalidOperationException(paymentResponse.Message ?? "MoMo không trả về payUrl hợp lệ");
 
             await _orderCollection.InsertOneAsync(order);
 
@@ -459,19 +487,19 @@ public class OrderService
     {
         var rawData = string.Join("&", new[]
         {
-            ($"partnerCode={request.PartnerCode}"),
             ($"accessKey={_momoSettings.AccessKey}"),
-            ($"requestId={request.RequestId}"),
             ($"amount={request.Amount}"),
+            ($"extraData={request.ExtraData}"),
+            ($"message={request.Message}"),
             ($"orderId={request.OrderId}"),
             ($"orderInfo={request.OrderInfo}"),
             ($"orderType={request.OrderType}"),
-            ($"transId={request.TransId}"),
-            ($"resultCode={request.ResultCode}"),
-            ($"message={request.Message}"),
+            ($"partnerCode={request.PartnerCode}"),
             ($"payType={request.PayType}"),
+            ($"requestId={request.RequestId}"),
             ($"responseTime={request.ResponseTime}"),
-            ($"extraData={request.ExtraData}")
+            ($"resultCode={request.ResultCode}"),
+            ($"transId={request.TransId}")
         });
 
         return ComputeHmacSha256(rawData, _momoSettings.SecretKey);
@@ -479,13 +507,12 @@ public class OrderService
 
     private MomoIpnResult? ValidateMomoWebhookAsync(MomoIpnRequest request, Order order)
     {
-        if (!string.Equals(request.PartnerCode, _momoSettings.PartnerCode, StringComparison.OrdinalIgnoreCase) ||
-            !string.Equals(request.AccessKey, _momoSettings.AccessKey, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(request.PartnerCode, _momoSettings.PartnerCode, StringComparison.OrdinalIgnoreCase))
         {
             return new MomoIpnResult
             {
                 ResultCode = 1,
-                Message = "Invalid partner or access key"
+                Message = "Invalid partner code"
             };
         }
 
@@ -546,17 +573,14 @@ public class MomoPaymentResponse
     [JsonPropertyName("message")]
     public string? Message { get; set; }
 
-    [JsonPropertyName("errorCode")]
-    public int? ErrorCode { get; set; }
+    [JsonPropertyName("resultCode")]
+    public int ResultCode { get; set; }
 }
 
 public class MomoIpnRequest
 {
     [JsonPropertyName("partnerCode")]
     public string PartnerCode { get; set; } = string.Empty;
-
-    [JsonPropertyName("accessKey")]
-    public string AccessKey { get; set; } = string.Empty;
 
     [JsonPropertyName("requestId")]
     public string RequestId { get; set; } = string.Empty;

@@ -20,7 +20,7 @@ This backend is prepared for Railway deployment with Docker.
 5. Railway should detect the root `Dockerfile`.
 6. Add the production variables below in the service Variables tab.
 7. Open the service Settings tab and generate a Railway domain under Public Networking.
-8. Update `AppSettings__BaseUrl`, `AppSettings__FrontendBaseUrl`, `MomoSettings__ReturnUrl`, and `MomoSettings__IpnUrl` with the deployed URLs.
+8. Update `AppSettings__BaseUrl`, `AppSettings__FrontendBaseUrl`, `MomoSettings__RedirectUrl`, and `MomoSettings__IpnUrl` with the deployed URLs.
 
 Railway does not run `docker-compose.yml` directly in production. Use Compose locally, and let Railway deploy the API service from the Dockerfile.
 
@@ -47,7 +47,7 @@ MomoSettings__PartnerCode=<momo-partner-code>
 MomoSettings__AccessKey=<momo-access-key>
 MomoSettings__SecretKey=<momo-secret-key>
 MomoSettings__Endpoint=<momo-create-payment-endpoint>
-MomoSettings__ReturnUrl=https://your-service.up.railway.app/api/orders/momo-return
+MomoSettings__RedirectUrl=https://cotee.xyz/payment-result
 MomoSettings__IpnUrl=https://your-service.up.railway.app/api/orders/momo-ipn
 ```
 

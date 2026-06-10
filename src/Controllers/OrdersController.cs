@@ -2,6 +2,7 @@ using CoTee.Entities;
 using CoTee.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 
 namespace CoTee.Controllers;
@@ -235,8 +236,13 @@ public class OrdersController : ControllerBase
 
 public class CheckoutRequest
 {
+    [Required]
     public string FullName { get; set; } = string.Empty;
+
+    [Required]
     public string Phone { get; set; } = string.Empty;
+
+    [Required]
     public string Address { get; set; } = string.Empty;
 }
 

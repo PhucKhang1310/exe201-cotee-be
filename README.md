@@ -150,7 +150,7 @@ Sửa nội dung trong `appsettings.json` hoặc `appsettings.Development.json`:
     "AccessKey": "MOMO_ACCESS_KEY",
     "SecretKey": "MOMO_SECRET_KEY",
     "Endpoint": "https://test-payment.momo.vn/v2/gateway/api/create",
-    "ReturnUrl": "http://localhost:5001/api/orders/momo-return",
+    "RedirectUrl": "http://localhost:5173/payment-result",
     "IpnUrl": "http://localhost:5001/api/orders/momo-ipn"
   }
 }
@@ -159,7 +159,7 @@ Sửa nội dung trong `appsettings.json` hoặc `appsettings.Development.json`:
 > Khuyến nghị: trong môi trường production, hãy chuyển các secret sang biến môi trường hoặc secret manager.
 
 > Lưu ý MoMo:
-> - `ReturnUrl` trỏ tới endpoint API dùng để nhận redirect sau khi khách hàng thanh toán xong.
+> - `RedirectUrl` trỏ tới trang frontend hiển thị kết quả sau khi khách hàng thanh toán xong.
 > - `IpnUrl` là endpoint để MoMo gửi thông báo thanh toán (IPN) và xác nhận trạng thái đơn hàng.
 > - Khi chạy local, bạn có thể cần tạo tunnel công khai (ví dụ ngrok) để MoMo có thể truy cập `IpnUrl` nếu dùng endpoint trên localhost.
 
