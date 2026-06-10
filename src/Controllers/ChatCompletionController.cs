@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace CoTee.Controllers;
 
 [ApiController]
-[AllowAnonymous]
+[Authorize]
 public class ChatCompletionController : ControllerBase
 {
     private readonly IOpenAiChatService _chatService;

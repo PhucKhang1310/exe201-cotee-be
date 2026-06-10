@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace CoTee.Controllers;
 
 [ApiController]
-[AllowAnonymous]
+[Authorize]
 [Route("gen_image")]
 public class GenImageController : ControllerBase
 {
