@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace CooTee.Entities;
+namespace CoTee.Entities;
 
 [BsonIgnoreExtraElements]
 public class Product

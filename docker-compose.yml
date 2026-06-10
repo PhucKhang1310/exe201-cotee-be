@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: cootee-api
+    container_name: cotee-api
     ports:
       - "5001:8080"
     environment:
@@ -18,19 +18,19 @@ services:
       ResendSettings__ApiKey: ${ResendSettings__ApiKey:-re_your_api_key}
       ResendSettings__ApiBaseUrl: ${ResendSettings__ApiBaseUrl:-https://api.resend.com}
       ResendSettings__FromEmail: ${ResendSettings__FromEmail:-onboarding@resend.dev}
-      ResendSettings__FromName: ${ResendSettings__FromName:-CooTee Account}
+      ResendSettings__FromName: ${ResendSettings__FromName:-CoTee Account}
       MomoSettings__ReturnUrl: http://localhost:5001/api/orders/momo-return
       MomoSettings__IpnUrl: http://localhost:5001/api/orders/momo-ipn
     depends_on:
       mongodb:
         condition: service_healthy
     networks:
-      - cootee-network
+      - cotee-network
     restart: unless-stopped
 
   mongodb:
     image: mongo:latest
-    container_name: cootee-mongodb
+    container_name: cotee-mongodb
     ports:
       - "27017:27017"
     environment:
@@ -41,7 +41,7 @@ services:
       - mongodb_data:/data/db
       - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     networks:
-      - cootee-network
+      - cotee-network
     restart: unless-stopped
     healthcheck:
       test: mongosh --quiet --eval "db.adminCommand('ping').ok"
@@ -51,7 +51,7 @@ services:
 
   mongo-express:
     image: mongo-express:latest
-    container_name: cootee-mongo-express
+    container_name: cotee-mongo-express
     ports:
       - "8081:8081"
     environment:
@@ -63,7 +63,7 @@ services:
       mongodb:
         condition: service_healthy
     networks:
-      - cootee-network
+      - cotee-network
     restart: unless-stopped
 
 volumes:
@@ -71,5 +71,5 @@ volumes:
     driver: local
 
 networks:
-  cootee-network:
+  cotee-network:
     driver: bridge

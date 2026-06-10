@@ -1,4 +1,4 @@
-namespace CooTee.Configuration;
+namespace CoTee.Configuration;
 
 
 

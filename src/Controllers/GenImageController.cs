@@ -1,8 +1,8 @@
-using CooTee.Services;
+using CoTee.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace CooTee.Controllers;
+namespace CoTee.Controllers;
 
 [ApiController]
 [AllowAnonymous]

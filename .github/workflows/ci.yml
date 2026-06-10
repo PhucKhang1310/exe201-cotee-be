@@ -20,7 +20,7 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Restore
-        run: dotnet restore CooTee.Api.csproj
+        run: dotnet restore CoTee.Api.csproj
 
       - name: Build
-        run: dotnet build CooTee.Api.csproj --configuration Release --no-restore
+        run: dotnet build CoTee.Api.csproj --configuration Release --no-restore

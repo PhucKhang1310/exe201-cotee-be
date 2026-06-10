@@ -1,4 +1,4 @@
-namespace CooTee.Services;
+namespace CoTee.Services;
 
 
 

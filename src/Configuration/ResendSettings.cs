@@ -1,11 +1,11 @@
-namespace CooTee.Configuration;
+namespace CoTee.Configuration;
 
 public class ResendSettings
 {
     public string ApiKey { get; set; } = string.Empty;
     public string ApiBaseUrl { get; set; } = "https://api.resend.com";
     public string FromEmail { get; set; } = string.Empty;
-    public string FromName { get; set; } = "CooTee Account";
+    public string FromName { get; set; } = "CoTee Account";
 
     public void Validate()
     {

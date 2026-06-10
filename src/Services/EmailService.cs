@@ -1,8 +1,8 @@
-using CooTee.Configuration;
+using CoTee.Configuration;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
-namespace CooTee.Services;
+namespace CoTee.Services;
 
 
 
@@ -85,7 +85,7 @@ public class EmailService : IEmailService
             
             var htmlBody = GenerateVerificationEmailHtml(toName, verificationToken, verificationUrl);
 
-            var subject = "CooTee - Xác Nhận Tài Khoản";
+            var subject = "CoTee - Xác Nhận Tài Khoản";
             return await SendEmailAsync(toEmail, toName, subject, htmlBody);
         }
         catch (Exception ex)
@@ -105,7 +105,7 @@ public class EmailService : IEmailService
         {
             var htmlBody = GeneratePasswordResetEmailHtml(toName, resetToken, resetUrl);
 
-            var subject = "CooTee - Đặt Lại Mật Khẩu";
+            var subject = "CoTee - Đặt Lại Mật Khẩu";
             return await SendEmailAsync(toEmail, toName, subject, htmlBody);
         }
         catch (Exception ex)
@@ -123,7 +123,7 @@ public class EmailService : IEmailService
         try
         {
             var htmlBody = GenerateWelcomeEmailHtml(toName);
-            var subject = "Chào Mừng Đến Với CooTee";
+            var subject = "Chào Mừng Đến Với CoTee";
             return await SendEmailAsync(toEmail, toName, subject, htmlBody);
         }
         catch (Exception ex)
@@ -161,12 +161,12 @@ public class EmailService : IEmailService
 <body>
     <div class='container'>
         <div class='header'>
-            <h1>CooTee - Xác Nhận Tài Khoản</h1>
+            <h1>CoTee - Xác Nhận Tài Khoản</h1>
         </div>
         <div class='content'>
             <p>Xin chào <strong>{userName}</strong>,</p>
             
-            <p>Cảm ơn bạn đã đăng ký tài khoản CooTee! Để hoàn tất việc đăng ký, vui lòng xác nhận email của bạn bằng cách nhấp vào nút bên dưới:</p>
+            <p>Cảm ơn bạn đã đăng ký tài khoản CoTee! Để hoàn tất việc đăng ký, vui lòng xác nhận email của bạn bằng cách nhấp vào nút bên dưới:</p>
 
             <div class='button-container'>
                 <a href='{verificationUrl}' class='button'>Xác Nhận Email</a>
@@ -182,10 +182,10 @@ public class EmailService : IEmailService
 
             <p>Nếu bạn không tạo tài khoản này, vui lòng bỏ qua email này.</p>
 
-            <p>Trân trọng,<br><strong>CooTee Team</strong></p>
+            <p>Trân trọng,<br><strong>CoTee Team</strong></p>
         </div>
         <div class='footer'>
-            <p>© 2026 CooTee. Tất cả quyền được bảo lưu.</p>
+            <p>© 2026 CoTee. Tất cả quyền được bảo lưu.</p>
             <p>Đây là email tự động, vui lòng không trả lời.</p>
         </div>
     </div>
@@ -240,10 +240,10 @@ public class EmailService : IEmailService
 
             <p>Nếu bạn gặp vấn đề, vui lòng liên hệ với chúng tôi.</p>
 
-            <p>Trân trọng,<br><strong>CooTee Team</strong></p>
+            <p>Trân trọng,<br><strong>CoTee Team</strong></p>
         </div>
         <div class='footer'>
-            <p>© 2026 CooTee. Tất cả quyền được bảo lưu.</p>
+            <p>© 2026 CoTee. Tất cả quyền được bảo lưu.</p>
         </div>
     </div>
 </body>
@@ -276,12 +276,12 @@ public class EmailService : IEmailService
 <body>
     <div class='container'>
         <div class='header'>
-            <h1>🎉 Chào Mừng Đến Với CooTee!</h1>
+            <h1>🎉 Chào Mừng Đến Với CoTee!</h1>
         </div>
         <div class='content'>
             <p>Xin chào <strong>{userName}</strong>,</p>
             
-            <p>Tài khoản của bạn đã được xác nhận thành công! Chúng tôi rất vui được chào đón bạn trở thành một phần của cộng đồng CooTee.</p>
+            <p>Tài khoản của bạn đã được xác nhận thành công! Chúng tôi rất vui được chào đón bạn trở thành một phần của cộng đồng CoTee.</p>
 
             <div class='features'>
                 <p><strong>Bạn có thể bắt đầu với:</strong></p>
@@ -295,12 +295,12 @@ public class EmailService : IEmailService
 
             <p>Nếu bạn có bất kỳ câu hỏi hoặc cần hỗ trợ, đừng ngần ngại liên hệ với chúng tôi.</p>
 
-            <p>Cảm ơn bạn đã chọn CooTee!</p>
+            <p>Cảm ơn bạn đã chọn CoTee!</p>
 
-            <p>Trân trọng,<br><strong>CooTee Team</strong></p>
+            <p>Trân trọng,<br><strong>CoTee Team</strong></p>
         </div>
         <div class='footer'>
-            <p>© 2026 CooTee. Tất cả quyền được bảo lưu.</p>
+            <p>© 2026 CoTee. Tất cả quyền được bảo lưu.</p>
         </div>
     </div>
 </body>

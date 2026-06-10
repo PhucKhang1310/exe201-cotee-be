@@ -1,4 +1,4 @@
-namespace CooTee.Infrastructure.Repositories;
+namespace CoTee.Infrastructure.Repositories;
 
 
 

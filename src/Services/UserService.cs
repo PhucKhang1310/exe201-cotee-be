@@ -1,7 +1,7 @@
-using CooTee.Entities;
-using CooTee.Infrastructure.Repositories;
+using CoTee.Entities;
+using CoTee.Infrastructure.Repositories;
 
-namespace CooTee.Services;
+namespace CoTee.Services;
 
 
 

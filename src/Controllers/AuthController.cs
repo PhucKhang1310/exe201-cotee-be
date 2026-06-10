@@ -1,9 +1,9 @@
-using CooTee.Services;
+using CoTee.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Linq;
 
-namespace CooTee.Controllers;
+namespace CoTee.Controllers;
 
 
 

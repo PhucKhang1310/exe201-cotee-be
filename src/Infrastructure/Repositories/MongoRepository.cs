@@ -1,7 +1,7 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
 
-namespace CooTee.Infrastructure.Repositories;
+namespace CoTee.Infrastructure.Repositories;
 
 
 

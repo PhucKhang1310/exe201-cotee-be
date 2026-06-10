@@ -1,12 +1,12 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using CooTee.Entities;
-using CooTee.Infrastructure.Repositories;
+using CoTee.Entities;
+using CoTee.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace CooTee.Middleware;
+namespace CoTee.Middleware;
 
 public class BlacklistMiddleware
 {

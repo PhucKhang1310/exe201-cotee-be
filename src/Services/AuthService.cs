@@ -2,13 +2,13 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography;
 using System.Security.Claims;
 using System.Text;
-using CooTee.Configuration;
-using CooTee.Entities;
-using CooTee.Infrastructure.Repositories;
+using CoTee.Configuration;
+using CoTee.Entities;
+using CoTee.Infrastructure.Repositories;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.IdentityModel.Tokens;
 
-namespace CooTee.Services;
+namespace CoTee.Services;
 
 
 

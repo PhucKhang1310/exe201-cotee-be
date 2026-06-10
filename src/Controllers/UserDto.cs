@@ -1,6 +1,6 @@
-using CooTee.Entities;
+using CoTee.Entities;
 
-namespace CooTee.Controllers;
+namespace CoTee.Controllers;
 
 public class UserDto
 {

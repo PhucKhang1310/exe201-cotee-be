@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace CooTee.Services;
+namespace CoTee.Services;
 
 public interface IOpenAiChatMockService
 {

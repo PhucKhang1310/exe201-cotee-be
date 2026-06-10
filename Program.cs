@@ -1,14 +1,14 @@
-using CooTee.Configuration;
-using CooTee.Entities;
-using CooTee.Infrastructure.Repositories;
-using CooTee.Services;
+using CoTee.Configuration;
+using CoTee.Entities;
+using CoTee.Infrastructure.Repositories;
+using CoTee.Services;
 using MongoDB.Driver;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using CooTee.Middleware;
+using CoTee.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -174,7 +174,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "CooTee API", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "CoTee API", Version = "v1" });
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -243,7 +243,7 @@ if (app.Environment.IsDevelopment() || swaggerEnabled)
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "CooTee API v1");
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "CoTee API v1");
         options.RoutePrefix = "swagger";
     });
 }

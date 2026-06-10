@@ -3,10 +3,10 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using CooTee.Configuration;
+using CoTee.Configuration;
 using Microsoft.Extensions.Options;
 
-namespace CooTee.Services;
+namespace CoTee.Services;
 
 public class OpenAiChatRealService : IOpenAiChatService
 {

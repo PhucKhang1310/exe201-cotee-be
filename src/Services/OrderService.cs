@@ -3,12 +3,12 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using CooTee.Configuration;
-using CooTee.Entities;
+using CoTee.Configuration;
+using CoTee.Entities;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
-namespace CooTee.Services;
+namespace CoTee.Services;
 
 public class OrderService
 {

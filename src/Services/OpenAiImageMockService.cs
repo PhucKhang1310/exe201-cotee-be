@@ -3,7 +3,7 @@ using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text.Json.Serialization;
 
-namespace CooTee.Services;
+namespace CoTee.Services;
 
 public interface IOpenAiImageMockService
 {

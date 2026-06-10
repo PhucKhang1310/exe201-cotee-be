@@ -1,10 +1,10 @@
-using CooTee.Entities;
-using CooTee.Infrastructure.Repositories;
+using CoTee.Entities;
+using CoTee.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
-namespace CooTee.Controllers;
+namespace CoTee.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

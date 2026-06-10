@@ -1,8 +1,8 @@
 // Initialize MongoDB database and collections
 // This script runs when MongoDB container starts
 
-// Switch to CooTeeDb database
-db = db.getSiblingDB('CooTeeDb');
+// Switch to CoTeeDb database
+db = db.getSiblingDB('CoTeeDb');
 
 // Create users collection if it doesn't exist
 db.createCollection('users', {
@@ -79,7 +79,7 @@ db.users.createIndex(
   { name: 'text_search' }
 );
 
-print('✅ Database CooTeeDb initialized successfully!');
+print('✅ Database CoTeeDb initialized successfully!');
 print('✅ Collection "users" created with schema validation');
 print('✅ Indexes created for optimal performance');
 

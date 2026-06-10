@@ -1,4 +1,4 @@
-﻿# CooTee API
+# CoTee API
 
 Backend ASP.NET Core 8 + MongoDB cho hệ thống thương mại điện tử gồm xác thực, sản phẩm, giỏ hàng, đơn hàng và thanh toán MoMo.
 
@@ -9,7 +9,7 @@ Backend ASP.NET Core 8 + MongoDB cho hệ thống thương mại điện tử g�
 - Frontend: https://exe101-cotee-fe.vercel.app/
 
 ## Tổng quan dự án
-CooTee API là một REST API được xây dựng bằng ASP.NET Core 8, dùng MongoDB làm cơ sở dữ liệu và hỗ trợ các luồng chính sau:
+CoTee API là một REST API được xây dựng bằng ASP.NET Core 8, dùng MongoDB làm cơ sở dữ liệu và hỗ trợ các luồng chính sau:
 - Đăng ký / đăng nhập / xác thực email / đặt lại mật khẩu
 - Quản lý sản phẩm (xem công khai, tạo/sửa/xóa cho Admin)
 - Quản lý giỏ hàng cho khách hàng
@@ -135,15 +135,15 @@ Sửa nội dung trong `appsettings.json` hoặc `appsettings.Development.json`:
   },
   "Jwt": {
     "SecretKey": "your-super-secret-key-here-min-32-characters-long",
-    "Issuer": "CooTeeApi",
-    "Audience": "CooTeeClient",
+    "Issuer": "CoTeeApi",
+    "Audience": "CoTeeClient",
     "ExpirationMinutes": 60
   },
   "ResendSettings": {
     "ApiKey": "re_your_api_key",
     "ApiBaseUrl": "https://api.resend.com",
     "FromEmail": "onboarding@resend.dev",
-    "FromName": "CooTee Account"
+    "FromName": "CoTee Account"
   },
   "MomoSettings": {
     "PartnerCode": "MOMO_PARTNER_CODE",

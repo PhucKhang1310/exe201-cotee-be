@@ -1,8 +1,8 @@
-using CooTee.Entities;
+using CoTee.Entities;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
-namespace CooTee.Services;
+namespace CoTee.Services;
 
 public class CartService
 {

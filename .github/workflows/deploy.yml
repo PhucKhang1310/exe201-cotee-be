@@ -21,7 +21,7 @@ jobs:
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io --username "${{ github.actor }}" --password-stdin
 
       - name: Set image name
-        run: echo "IMAGE_NAME=ghcr.io/${GITHUB_REPOSITORY,,}/cootee-api" >> "$GITHUB_ENV"
+        run: echo "IMAGE_NAME=ghcr.io/${GITHUB_REPOSITORY,,}/cotee-api" >> "$GITHUB_ENV"
 
       - name: Build image
         run: docker build --tag "${IMAGE_NAME}:latest" --tag "${IMAGE_NAME}:${{ github.sha }}" .
