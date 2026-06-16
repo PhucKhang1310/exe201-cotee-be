@@ -156,6 +156,43 @@ public class AuthController : ControllerBase
         }
     }
 
+    [HttpPost("google-login")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<LoginResponse>> GoogleLogin([FromBody] GoogleLoginRequest request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var result = await _authService.LoginWithGoogleAsync(request.IdToken);
+
+            if (!result.IsSuccess)
+            {
+                if ((result.Message?.Contains("token") ?? false) || (result.Message?.Contains("Google") ?? false))
+                    return BadRequest(new { message = result.Message });
+                return Unauthorized(new { message = result.Message });
+            }
+
+            return Ok(new LoginResponse
+            {
+                Message = result.Message,
+                Token = result.Token,
+                TokenExpiresAt = result.TokenExpiresAt,
+                User = UserDto.FromEntity(result.User!)
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during Google login");
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "Lỗi khi đăng nhập bằng Google" });
+        }
+    }
+
     
     
     
@@ -312,6 +349,12 @@ public class LoginRequest
 }
 
 
+
+
+public class GoogleLoginRequest
+{
+    public string IdToken { get; set; } = string.Empty;
+}
 
 
 public class LoginResponse

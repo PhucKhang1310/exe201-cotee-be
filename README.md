@@ -152,11 +152,19 @@ Sửa nội dung trong `appsettings.json` hoặc `appsettings.Development.json`:
     "Endpoint": "https://test-payment.momo.vn/v2/gateway/api/create",
     "RedirectUrl": "http://localhost:5173/payment-result",
     "IpnUrl": "http://localhost:5001/api/orders/momo-ipn"
+  },
+  "Google": {
+    "Enabled": false,
+    "ClientId": "your-google-oauth-client-id.apps.googleusercontent.com"
   }
 }
 ```
 
 > Khuyến nghị: trong môi trường production, hãy chuyển các secret sang biến môi trường hoặc secret manager.
+> 
+> Google login có thể cấu hình bằng biến môi trường:
+> - `Google__Enabled=false`
+> - `Google__ClientId=your-google-oauth-client-id.apps.googleusercontent.com`
 
 > Lưu ý MoMo:
 > - `RedirectUrl` trỏ tới trang frontend hiển thị kết quả sau khi khách hàng thanh toán xong.
@@ -194,6 +202,7 @@ Sau khi chạy, API sẽ sẵn sàng tại:
 - GET /api/auth/verify-email?token=...
 - POST /api/auth/resend-verification
 - POST /api/auth/login
+- POST /api/auth/google-login
 - POST /api/auth/forgot-password
 - POST /api/auth/reset-password
 - POST /api/auth/logout

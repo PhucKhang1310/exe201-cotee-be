@@ -1,7 +1,6 @@
-using CoTee.Entities;
+﻿using CoTee.Entities;
 
 namespace CoTee.Services;
-
 
 
 
@@ -12,12 +11,8 @@ public interface IAuthService
     
     
     
-    
-    
     Task<AuthResult> RegisterAsync(string email, string password, string fullName);
 
-    
-    
     
     
     
@@ -29,11 +24,10 @@ public interface IAuthService
     
     
     
-    
-    
     Task<LoginResult> LoginAsync(string email, string password);
 
-    
+    Task<LoginResult> LoginWithGoogleAsync(string idToken);
+
     
     
     
@@ -43,12 +37,8 @@ public interface IAuthService
     
     
     
-    
-    
     Task<PasswordResetResult> RequestPasswordResetAsync(string email);
 
-    
-    
     
     
     
@@ -58,11 +48,8 @@ public interface IAuthService
     
     
     
-    
-    
     Task<bool> LogoutAsync(string token);
 }
-
 
 
 
@@ -77,14 +64,12 @@ public class AuthResult
 
 
 
-
 public class VerificationResult
 {
     public bool IsSuccess { get; set; }
     public string? Message { get; set; }
     public User? User { get; set; }
 }
-
 
 
 
@@ -96,7 +81,6 @@ public class LoginResult
     public string? Token { get; set; }
     public DateTime? TokenExpiresAt { get; set; }
 }
-
 
 
 

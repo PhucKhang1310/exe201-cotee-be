@@ -29,6 +29,9 @@ builder.Configuration.GetSection("ResendSettings").Bind(resendSettings);
 var appSettings = new AppSettings();
 builder.Configuration.GetSection("AppSettings").Bind(appSettings);
 
+var googleSettings = new CoTee.Configuration.GoogleSettings();
+builder.Configuration.GetSection("Google").Bind(googleSettings);
+
 var momoSettings = new MomoSettings();
 builder.Configuration.GetSection("MomoSettings").Bind(momoSettings);
 
@@ -42,6 +45,7 @@ try
     if (!appSettings.AutoVerifyEmailOnRegistration)
         resendSettings.Validate();
     appSettings.Validate();
+    googleSettings.Validate();
     momoSettings.Validate();
 }
 catch (InvalidOperationException ex)
@@ -64,6 +68,9 @@ builder.Services.Configure<ResendSettings>(
 builder.Services.Configure<AppSettings>(
     builder.Configuration.GetSection("AppSettings"));
 
+builder.Services.Configure<GoogleSettings>(
+    builder.Configuration.GetSection("Google"));
+
 builder.Services.Configure<MomoSettings>(
     builder.Configuration.GetSection("MomoSettings"));
 
@@ -74,6 +81,7 @@ builder.Services.Configure<OpenAiSettings>(
 builder.Services.AddSingleton(jwtSettings);
 builder.Services.AddSingleton(resendSettings);
 builder.Services.AddSingleton(appSettings);
+builder.Services.AddSingleton(googleSettings);
 builder.Services.AddSingleton(momoSettings);
 
 

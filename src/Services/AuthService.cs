@@ -1,3 +1,4 @@
+using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography;
 using System.Security.Claims;
@@ -5,6 +6,7 @@ using System.Text;
 using CoTee.Configuration;
 using CoTee.Entities;
 using CoTee.Infrastructure.Repositories;
+using Google.Apis.Auth;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.IdentityModel.Tokens;
 
@@ -20,6 +22,7 @@ public class AuthService : IAuthService
     private readonly IEmailService _emailService;
     private readonly JwtSettings _jwtSettings;
     private readonly AppSettings _appSettings;
+    private readonly GoogleSettings _googleSettings;
     private readonly ILogger<AuthService> _logger;
 
     public AuthService(
@@ -28,6 +31,7 @@ public class AuthService : IAuthService
         IEmailService emailService,
         JwtSettings jwtSettings,
         AppSettings appSettings,
+        GoogleSettings googleSettings,
         ILogger<AuthService> logger)
     {
         _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
@@ -35,10 +39,12 @@ public class AuthService : IAuthService
         _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
         _jwtSettings = jwtSettings ?? throw new ArgumentNullException(nameof(jwtSettings));
         _appSettings = appSettings ?? throw new ArgumentNullException(nameof(appSettings));
+        _googleSettings = googleSettings ?? throw new ArgumentNullException(nameof(googleSettings));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         _jwtSettings.Validate();
         _appSettings.Validate();
+        _googleSettings.Validate();
     }
 
     
@@ -429,7 +435,112 @@ public class AuthService : IAuthService
         }
     }
 
-    
+    public async Task<LoginResult> LoginWithGoogleAsync(string idToken)
+    {
+        try
+        {
+            if (!_googleSettings.Enabled)
+            {
+                return new LoginResult
+                {
+                    IsSuccess = false,
+                    Message = "Google login chưa được cấu hình"
+                };
+            }
+
+            if (string.IsNullOrWhiteSpace(idToken))
+            {
+                return new LoginResult
+                {
+                    IsSuccess = false,
+                    Message = "IdToken Google không được để trống"
+                };
+            }
+
+            var payload = await GoogleJsonWebSignature.ValidateAsync(idToken, new GoogleJsonWebSignature.ValidationSettings
+            {
+                Audience = new[] { _googleSettings.ClientId }
+            });
+
+            if (string.IsNullOrWhiteSpace(payload.Email) || !payload.EmailVerified)
+            {
+                return new LoginResult
+                {
+                    IsSuccess = false,
+                    Message = "Xác thực Google thất bại hoặc email chưa được xác minh"
+                };
+            }
+
+            var email = NormalizeEmail(payload.Email);
+            var user = await _userRepository.FindOneAsync("email", email);
+
+            if (user == null)
+            {
+                var generatedPassword = Guid.NewGuid().ToString();
+                var passwordHash = BCrypt.Net.BCrypt.HashPassword(generatedPassword);
+
+                user = new User
+                {
+                    Email = email,
+                    PasswordHash = passwordHash,
+                    FullName = string.IsNullOrWhiteSpace(payload.Name) ? email : payload.Name.Trim(),
+                    Role = "Customer",
+                    IsEmailVerified = true,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                user = await _userRepository.CreateAsync(user);
+                _logger.LogInformation("New user created through Google login: {Email}", email);
+            }
+            else if (!user.IsActive)
+            {
+                return new LoginResult
+                {
+                    IsSuccess = false,
+                    Message = "Tài khoản đã bị vô hiệu hóa"
+                };
+            }
+            else if (!user.IsEmailVerified)
+            {
+                user.IsEmailVerified = true;
+                user.VerificationToken = null;
+                user.TokenExpiresAt = null;
+                user.UpdatedAt = DateTime.UtcNow;
+                await _userRepository.UpdateAsync(user.Id, user);
+            }
+
+            if (!string.IsNullOrWhiteSpace(payload.Name) && payload.Name.Trim() != user.FullName)
+            {
+                user.FullName = payload.Name.Trim();
+                user.UpdatedAt = DateTime.UtcNow;
+                await _userRepository.UpdateAsync(user.Id, user);
+            }
+
+            string token = GenerateJwtToken(user);
+            DateTime tokenExpiresAt = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationMinutes);
+
+            return new LoginResult
+            {
+                IsSuccess = true,
+                Message = "Đăng nhập bằng Google thành công",
+                User = user,
+                Token = token,
+                TokenExpiresAt = tokenExpiresAt
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Google token validation failed");
+            return new LoginResult
+            {
+                IsSuccess = false,
+                Message = "Google login không hợp lệ"
+            };
+        }
+    }
+
     
     
     public string GenerateJwtToken(User user)
