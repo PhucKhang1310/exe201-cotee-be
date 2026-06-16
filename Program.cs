@@ -10,9 +10,9 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using CoTee.Middleware;
 
-var builder = WebApplication.CreateBuilder(args);
+LoadDotEnv(Path.Combine(Directory.GetCurrentDirectory(), ".env"));
 
-LoadDotEnv(Path.Combine(builder.Environment.ContentRootPath, ".env"));
+var builder = WebApplication.CreateBuilder(args);
 
 
 

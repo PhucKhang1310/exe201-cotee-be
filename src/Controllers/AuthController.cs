@@ -1,3 +1,4 @@
+using CoTee.Configuration;
 using CoTee.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
@@ -13,13 +14,51 @@ namespace CoTee.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly GoogleSettings _googleSettings;
     private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IAuthService authService, ILogger<AuthController> logger)
+    public AuthController(
+        IAuthService authService,
+        GoogleSettings googleSettings,
+        ILogger<AuthController> logger)
     {
         _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+        _googleSettings = googleSettings ?? throw new ArgumentNullException(nameof(googleSettings));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
+
+    [HttpGet("google-redirect")]
+    [ProducesResponseType(StatusCodes.Status302Found)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public IActionResult GoogleRedirect(
+        [FromQuery] string redirectUri,
+        [FromQuery] string state,
+        [FromQuery] string nonce)
+    {
+        if (!_googleSettings.Enabled || string.IsNullOrWhiteSpace(_googleSettings.ClientId))
+            return BadRequest(new { message = "Google login chưa được cấu hình" });
+
+        if (string.IsNullOrWhiteSpace(redirectUri) ||
+            string.IsNullOrWhiteSpace(state) ||
+            string.IsNullOrWhiteSpace(nonce))
+        {
+            return BadRequest(new { message = "Thông tin đăng nhập Google không hợp lệ" });
+        }
+
+        var googleUrl = "https://accounts.google.com/o/oauth2/v2/auth?" + string.Join("&", new[]
+        {
+            $"client_id={Uri.EscapeDataString(_googleSettings.ClientId)}",
+            $"redirect_uri={Uri.EscapeDataString(redirectUri)}",
+            "response_type=id_token",
+            $"scope={Uri.EscapeDataString("openid email profile")}",
+            $"state={Uri.EscapeDataString(state)}",
+            $"nonce={Uri.EscapeDataString(nonce)}",
+            "prompt=select_account"
+        });
+
+        return Redirect(googleUrl);
+    }
+
 
     
     
@@ -355,7 +394,6 @@ public class GoogleLoginRequest
 {
     public string IdToken { get; set; } = string.Empty;
 }
-
 
 public class LoginResponse
 {
