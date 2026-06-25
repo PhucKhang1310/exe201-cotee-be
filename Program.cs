@@ -259,12 +259,17 @@ if (app.Environment.IsDevelopment() || swaggerEnabled)
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
 
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 
 app.UseAuthentication();
 app.UseMiddleware<BlacklistMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapFallbackToFile("index.html");
 
 app.Run();
 
