@@ -4,8 +4,8 @@ Backend ASP.NET Core 8 + MongoDB cho hệ thống thương mại điện tử g�
 
 ## Triển khai trực tuyến
 
-- Backend API: https://exe201-cotee-be-production.up.railway.app/
-- Swagger UI: https://exe201-cotee-be-production.up.railway.app/swagger/index.html
+- Backend API: https://api.yourdomain.com/
+- Swagger UI: https://api.yourdomain.com/swagger/index.html
 - Frontend: https://exe101-cotee-fe.vercel.app/
 
 ## Tổng quan dự án

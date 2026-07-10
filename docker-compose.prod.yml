@@ -1,0 +1,71 @@
+services:
+  api:
+    image: ${COTEE_API_IMAGE:-cotee-api:latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cotee-api
+    env_file:
+      - ${COTEE_ENV_FILE:-.env.production}
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      PORT: 8080
+      MongoDbSettings__ConnectionString: mongodb://${MONGO_ROOT_USERNAME:?set MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD}@mongodb:27017/?authSource=admin
+      MongoDbSettings__DatabaseName: ${MONGO_DATABASE:-CoTeeDB}
+    expose:
+      - "8080"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - cotee-network
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:7
+    container_name: cotee-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:?set MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-CoTeeDB}
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - cotee-network
+    restart: unless-stopped
+    healthcheck:
+      test: mongosh --quiet --eval "db.adminCommand('ping').ok"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: cotee-caddy
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?set API_DOMAIN}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - cotee-network
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:
+    driver: local
+  caddy_data:
+    driver: local
+  caddy_config:
+    driver: local
+
+networks:
+  cotee-network:
+    driver: bridge
