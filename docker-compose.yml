@@ -44,7 +44,7 @@ services:
       - cotee-network
     restart: unless-stopped
     healthcheck:
-      test: mongosh --quiet --eval "db.adminCommand('ping').ok"
+      test: mongosh "mongodb://$$MONGO_INITDB_ROOT_USERNAME:$$MONGO_INITDB_ROOT_PASSWORD@localhost:27017/admin?authSource=admin" --quiet --eval "db.adminCommand('ping').ok"
       interval: 10s
       timeout: 5s
       retries: 5

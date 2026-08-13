@@ -4,9 +4,10 @@ Backend ASP.NET Core 8 + MongoDB cho hệ thống thương mại điện tử g�
 
 ## Triển khai trực tuyến
 
-- Backend API: https://api.yourdomain.com/
-- Swagger UI: https://api.yourdomain.com/swagger/index.html
+- Backend API: https://exe201-api.cotee.xyz/
+- Swagger UI: https://exe201-api.cotee.xyz/swagger/index.html
 - Frontend: https://exe101-cotee-fe.vercel.app/
+- Heroku deployment config: `heroku.yml` and `.env.heroku.example`
 
 ## Tổng quan dự án
 CoTee API là một REST API được xây dựng bằng ASP.NET Core 8, dùng MongoDB làm cơ sở dữ liệu và hỗ trợ các luồng chính sau:
