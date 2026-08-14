@@ -253,7 +253,7 @@ public class OrderService
         if (order == null)
             return null;
 
-        if (order.PaymentStatus == "Paid")
+        if (order.PaymentStatus == "Paid" && !isAdmin)
             throw new InvalidOperationException("Không thể hủy đơn đã thanh toán");
 
         order.PaymentStatus = "Failed";
