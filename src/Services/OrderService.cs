@@ -105,6 +105,11 @@ public class OrderService
                 {
                     ProductId = product.Id,
                     Name = product.Name,
+                    ImageThumbnailUrl = product.ImageThumbnailUrl ??
+                        (!string.IsNullOrWhiteSpace(product.ImageUrl) &&
+                         !product.ImageUrl.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase)
+                            ? product.ImageUrl
+                            : null),
                     PriceAtPurchase = product.Price,
                     Quantity = item.Quantity,
                     Size = item.Size

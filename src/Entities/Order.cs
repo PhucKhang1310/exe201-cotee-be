@@ -57,6 +57,9 @@ public class OrderItem
     [BsonElement("name")]
     public string Name { get; set; } = string.Empty;
 
+    [BsonElement("imageThumbnailUrl")]
+    public string? ImageThumbnailUrl { get; set; }
+
     [BsonElement("priceAtPurchase")]
     public long PriceAtPurchase { get; set; }
 
