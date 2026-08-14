@@ -36,6 +36,11 @@ public class ProductsController : ControllerBase
                 return Forbid();
 
             var inlineImageRegex = new BsonRegularExpression("^data:image/", "i");
+            var hasInlineImageExpression = new BsonDocument("$regexMatch", new BsonDocument
+            {
+                { "input", new BsonDocument("$ifNull", new BsonArray { "$imageUrl", "" }) },
+                { "regex", inlineImageRegex }
+            });
             var documents = await _productCollection.Aggregate()
                 .Project(new BsonDocument
                 {
@@ -44,15 +49,13 @@ public class ProductsController : ControllerBase
                     { "name", "$name" },
                     { "imageUrl", new BsonDocument("$cond", new BsonArray
                         {
-                            new BsonDocument("$regexMatch", new BsonDocument
-                            {
-                                { "input", new BsonDocument("$ifNull", new BsonArray { "$imageUrl", "" }) },
-                                { "regex", inlineImageRegex }
-                            }),
+                            hasInlineImageExpression,
                             BsonNull.Value,
                             "$imageUrl"
                         })
                     },
+                    { "imageThumbnailUrl", "$imageThumbnailUrl" },
+                    { "hasInlineImage", hasInlineImageExpression },
                     { "price", "$price" },
                     { "stock", "$stock" }
                 })
@@ -63,6 +66,8 @@ public class ProductsController : ControllerBase
                 Id = GetString(document, "id"),
                 Name = GetString(document, "name"),
                 ImageUrl = GetNullableString(document, "imageUrl"),
+                ImageThumbnailUrl = GetNullableString(document, "imageThumbnailUrl"),
+                HasInlineImage = GetBoolean(document, "hasInlineImage"),
                 Price = GetInt64(document, "price"),
                 Stock = GetInt32(document, "stock")
             });
@@ -137,6 +142,7 @@ public class ProductsController : ControllerBase
             {
                 Name = request.Name.Trim(),
                 ImageUrl = request.ImageUrl,
+                ImageThumbnailUrl = request.ImageThumbnailUrl,
                 Price = request.Price,
                 Stock = request.Stock,
                 OwnerId = userId
@@ -177,6 +183,9 @@ public class ProductsController : ControllerBase
 
             if (request.ImageUrl != null)
                 product.ImageUrl = request.ImageUrl;
+
+            if (request.ImageThumbnailUrl != null)
+                product.ImageThumbnailUrl = request.ImageThumbnailUrl;
 
             if (request.Price.HasValue)
             {
@@ -271,6 +280,12 @@ public class ProductsController : ControllerBase
         var value = document.GetValue(key, BsonNull.Value);
         return value.IsBsonNull ? 0 : Convert.ToInt32(BsonTypeMapper.MapToDotNetValue(value));
     }
+
+    private static bool GetBoolean(BsonDocument document, string key)
+    {
+        var value = document.GetValue(key, BsonBoolean.False);
+        return value.IsBoolean && value.AsBoolean;
+    }
 }
 
 public class ProductSummaryResponse
@@ -278,6 +293,8 @@ public class ProductSummaryResponse
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string? ImageUrl { get; set; }
+    public string? ImageThumbnailUrl { get; set; }
+    public bool HasInlineImage { get; set; }
     public long Price { get; set; }
     public int Stock { get; set; }
 }
@@ -286,6 +303,7 @@ public class CreateProductRequest
 {
     public string Name { get; set; } = string.Empty;
     public string? ImageUrl { get; set; }
+    public string? ImageThumbnailUrl { get; set; }
     public long Price { get; set; }
     public int Stock { get; set; }
 }
@@ -294,6 +312,7 @@ public class UpdateProductRequest
 {
     public string? Name { get; set; }
     public string? ImageUrl { get; set; }
+    public string? ImageThumbnailUrl { get; set; }
     public long? Price { get; set; }
     public int? Stock { get; set; }
 }

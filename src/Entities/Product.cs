@@ -17,6 +17,9 @@ public class Product
     [BsonElement("imageUrl")]
     public string? ImageUrl { get; set; }
 
+    [BsonElement("imageThumbnailUrl")]
+    public string? ImageThumbnailUrl { get; set; }
+
     [BsonElement("price")]
     public long Price { get; set; }
 
