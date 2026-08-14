@@ -2,6 +2,8 @@ using CoTee.Entities;
 using CoTee.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson;
+using MongoDB.Driver;
 using System.Security.Claims;
 
 namespace CoTee.Controllers;
@@ -11,12 +13,67 @@ namespace CoTee.Controllers;
 public class ProductsController : ControllerBase
 {
     private readonly IMongoRepository<Product> _productRepository;
+    private readonly IMongoCollection<Product> _productCollection;
     private readonly ILogger<ProductsController> _logger;
 
-    public ProductsController(IMongoRepository<Product> productRepository, ILogger<ProductsController> logger)
+    public ProductsController(
+        IMongoRepository<Product> productRepository,
+        IMongoDatabase database,
+        ILogger<ProductsController> logger)
     {
         _productRepository = productRepository ?? throw new ArgumentNullException(nameof(productRepository));
+        _productCollection = (database ?? throw new ArgumentNullException(nameof(database))).GetCollection<Product>("products");
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    [Authorize]
+    [HttpGet("admin-summary")]
+    public async Task<ActionResult<IEnumerable<ProductSummaryResponse>>> GetAdminProductSummaries()
+    {
+        try
+        {
+            if (!IsAdmin())
+                return Forbid();
+
+            var inlineImageRegex = new BsonRegularExpression("^data:image/", "i");
+            var documents = await _productCollection.Aggregate()
+                .Project(new BsonDocument
+                {
+                    { "_id", 0 },
+                    { "id", new BsonDocument("$toString", "$_id") },
+                    { "name", "$name" },
+                    { "imageUrl", new BsonDocument("$cond", new BsonArray
+                        {
+                            new BsonDocument("$regexMatch", new BsonDocument
+                            {
+                                { "input", new BsonDocument("$ifNull", new BsonArray { "$imageUrl", "" }) },
+                                { "regex", inlineImageRegex }
+                            }),
+                            BsonNull.Value,
+                            "$imageUrl"
+                        })
+                    },
+                    { "price", "$price" },
+                    { "stock", "$stock" }
+                })
+                .ToListAsync();
+
+            var products = documents.Select(document => new ProductSummaryResponse
+            {
+                Id = GetString(document, "id"),
+                Name = GetString(document, "name"),
+                ImageUrl = GetNullableString(document, "imageUrl"),
+                Price = GetInt64(document, "price"),
+                Stock = GetInt32(document, "stock")
+            });
+
+            return Ok(products);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving admin product summaries");
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Lỗi khi lấy danh sách sản phẩm" });
+        }
     }
 
     [AllowAnonymous]
@@ -190,6 +247,39 @@ public class ProductsController : ControllerBase
         return string.Equals(User.FindFirst(ClaimTypes.Role)?.Value, "Admin", StringComparison.OrdinalIgnoreCase)
             || string.Equals(User.FindFirst("role")?.Value, "Admin", StringComparison.OrdinalIgnoreCase);
     }
+
+    private static string GetString(BsonDocument document, string key)
+    {
+        var value = document.GetValue(key, BsonNull.Value);
+        return value.IsString ? value.AsString : string.Empty;
+    }
+
+    private static string? GetNullableString(BsonDocument document, string key)
+    {
+        var value = document.GetValue(key, BsonNull.Value);
+        return value.IsString ? value.AsString : null;
+    }
+
+    private static long GetInt64(BsonDocument document, string key)
+    {
+        var value = document.GetValue(key, BsonNull.Value);
+        return value.IsBsonNull ? 0 : Convert.ToInt64(BsonTypeMapper.MapToDotNetValue(value));
+    }
+
+    private static int GetInt32(BsonDocument document, string key)
+    {
+        var value = document.GetValue(key, BsonNull.Value);
+        return value.IsBsonNull ? 0 : Convert.ToInt32(BsonTypeMapper.MapToDotNetValue(value));
+    }
+}
+
+public class ProductSummaryResponse
+{
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string? ImageUrl { get; set; }
+    public long Price { get; set; }
+    public int Stock { get; set; }
 }
 
 public class CreateProductRequest
